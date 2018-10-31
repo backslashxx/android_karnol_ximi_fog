@@ -5424,6 +5424,7 @@ static struct rpmsg_driver fastrpc_rpmsg_client = {
 	.drv = {
 		.name = "qcom,msm_fastrpc_rpmsg",
 		.of_match_table = fastrpc_rpmsg_of_match,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
