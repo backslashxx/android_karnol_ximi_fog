@@ -378,6 +378,7 @@ struct msm_spi {
 	struct pinctrl_state	*pins_sleep;
 	bool			is_init_complete;
 	bool			pack_words;
+	bool			hw_ctrl_cs;
 };
 
 /* Forward declaration */
