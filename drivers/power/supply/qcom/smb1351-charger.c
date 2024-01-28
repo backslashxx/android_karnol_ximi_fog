@@ -370,13 +370,13 @@
 #define USB2_MAX_CURRENT_MA			500
 #define USB3_MIN_CURRENT_MA			150
 #define USB3_MAX_CURRENT_MA			900
-#define DCP_MAX_CURRENT_MA			2000
+#define DCP_MAX_CURRENT_MA			3300
 #define SMB1351_IRQ_REG_COUNT			8
 #define SMB1351_CHG_PRE_MIN_MA			100
 #define SMB1351_CHG_FAST_MIN_MA			1000
 #define SMB1351_CHG_FAST_MAX_MA			4500
-#define SMB1351_CHG_PRE_SHIFT			5
-#define SMB1351_CHG_FAST_SHIFT			4
+#define SMB1351_CHG_PRE_SHIFT			5 
+#define SMB1351_CHG_FAST_SHIFT			5 //4
 #define DEFAULT_BATT_CAPACITY			50
 #define DEFAULT_BATT_TEMP			250
 #define SUSPEND_CURRENT_MA			2
@@ -1058,11 +1058,13 @@ static int smb1351_enable_hvdcp(struct smb1351_charger *chip)
 	//CHARGER_TYPE chg_type = CHARGER_UNKNOWN;
 	int rc = 0;
 
+	/* 
 	rc = smb1351_masked_write(chip, HVDCP_BATT_MISSING_CTRL_REG,
 			HVDCP_EN_BIT, HVDCP_EN_BIT);
 	if (rc)
 		pr_err( "SMB1351_LK Couldn't write hvdcp en rc=%d\n", rc);
 
+	*/
 	rc = smb1351_masked_write(chip, OTG_MODE_POWER_OPTIONS_REG,
 			MAP_HVDCP_BIT, HVDCP_EN_BIT);
 	if (rc)
@@ -1141,11 +1143,11 @@ static int smb1351_hw_init(struct smb1351_charger *chip)
 	}
 
 	/* setup battery missing source */
-	//reg = BATT_MISSING_THERM_PIN_SOURCE_BIT;
-	//mask = BATT_MISSING_THERM_PIN_SOURCE_BIT;
-	//rc = smb1351_masked_write(chip, HVDCP_BATT_MISSING_CTRL_REG,
-	//						mask,reg);
-/*	reg = BATT_MISSING_THERM_PIN_SOURCE_BIT | HVDCP_EN_BIT;
+	/*reg = BATT_MISSING_THERM_PIN_SOURCE_BIT;
+	mask = BATT_MISSING_THERM_PIN_SOURCE_BIT;
+	rc = smb1351_masked_write(chip, HVDCP_BATT_MISSING_CTRL_REG,
+							mask,reg);*/
+	reg = BATT_MISSING_THERM_PIN_SOURCE_BIT | HVDCP_EN_BIT;
 	mask = BATT_MISSING_THERM_PIN_SOURCE_BIT | HVDCP_EN_BIT;
 	rc = smb1351_masked_write(chip, HVDCP_BATT_MISSING_CTRL_REG,
 								mask, reg);
@@ -1153,7 +1155,7 @@ static int smb1351_hw_init(struct smb1351_charger *chip)
 	if (rc) {
 		pr_err("Couldn't set HVDCP_BATT_MISSING_CTRL_REG rc=%d\n", rc);
 		return rc;
-	}*/
+	}
 	smb1351_enable_hvdcp(chip);//11.15
 
 	/* setup defaults for CHG_PIN_EN_CTRL_REG */
@@ -1402,7 +1404,8 @@ static int smb1351_get_prop_batt_temp(struct smb1351_charger *chip)
 	}else{
 		power_supply_get_property(chip->bms_psy,
 				POWER_SUPPLY_PROP_TEMP, &ret);
-		return ret.intval;
+		//Fix for temperature battery reading
+		return ret.intval * 10;
 	}
 
 	//pr_err("return default temperature\n");
@@ -1592,6 +1595,7 @@ static int smb1351_usb_get_property(struct power_supply *psy,
 			val->intval = POWER_SUPPLY_TYPE_USB_HVDCP;
 		else if (chip->charger_type == POWER_SUPPLY_TYPE_UNKNOWN)
 			val->intval = POWER_SUPPLY_TYPE_UNKNOWN;
+			//val->intval = POWER_SUPPLY_TYPE_USB;
 		else
 			val->intval = chip->charger_type;
 		break;
@@ -1670,7 +1674,7 @@ static int smb1351_ac_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_ONLINE:
 		if (chip->chg_present && (chip->charger_type == POWER_SUPPLY_TYPE_USB_DCP
-			|| chip->charger_type == POWER_SUPPLY_TYPE_USB_HVDCP))
+			|| chip->charger_type == POWER_SUPPLY_TYPE_USB_HVDCP || chip->charger_type == POWER_SUPPLY_TYPE_USB_HVDCP_3)) 
 			val->intval = 1;
 		else
 			val->intval = 0;
@@ -2269,7 +2273,7 @@ static int smb1351_apsd_complete_handler(struct smb1351_charger *chip,
 			smb1351_masked_write(chip, CMD_HVDCP_REG,
 						CMD_FORCE_HVDCP_2P0_BIT,
 						CMD_FORCE_HVDCP_2P0_BIT);
-			//type = POWER_SUPPLY_TYPE_USB_HVDCP;
+			type = POWER_SUPPLY_TYPE_USB_HVDCP;
 
 		//} else if (type == POWER_SUPPLY_TYPE_USB_DCP) {
 		} else if (type == POWER_SUPPLY_TYPE_USB_DCP) {
@@ -2358,8 +2362,9 @@ reschedule:
 }
 
 static int smb1351_usbin_uv_handler(struct smb1351_charger *chip, u8 status)
-{
-	smb1351_request_dpdm(chip, !!status);
+{	
+	//Fix fastcharging from jasmine sprout and also veux
+	smb1351_request_dpdm(chip, !status);
 
 	if (status) {
 		cancel_delayed_work_sync(&chip->hvdcp_det_work);
