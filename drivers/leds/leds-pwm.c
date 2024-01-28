@@ -231,10 +231,10 @@ static int led_pwm_add(struct device *dev, struct led_pwm_priv *priv,
 	led_data->cdev.brightness_set_blocking = led_pwm_set;
 	led_data->cdev.blink_set = led_pwm_blink_set;
 
-	pwm_init_state(led_data->pwm, &led_data->pwmstate);
+	//pwm_init_state(led_data->pwm, &led_data->pwmstate);
 
-	if (!led_data->pwmstate.period)
-		led_data->pwmstate.period = led->pwm_period_ns;
+	//if (!led_data->pwmstate.period)
+	//	led_data->pwmstate.period = led->pwm_period_ns;
 
 	ret = led_classdev_register(dev, &led_data->cdev);
 	if (ret == 0) {
