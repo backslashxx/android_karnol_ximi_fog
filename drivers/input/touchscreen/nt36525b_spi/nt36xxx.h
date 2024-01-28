@@ -23,6 +23,8 @@
 #include <linux/of.h>
 #include <linux/spi/spi.h>
 #include <linux/uaccess.h>
+#include <linux/sysfs.h>
+#include <linux/workqueue.h>
 
 #include <linux/regulator/consumer.h>
 
@@ -71,6 +73,9 @@
 #define TP_VENDOR_UNKNOW  0X00
 #define TP_VENDOR_BOE     0X01
 
+//new qcom platform use
+#define _MSM_DRM_NOTIFY_H_
+
 #if NVT_DEBUG
 #define NVT_LOG(fmt, args...)    pr_err("[%s] %s %d: " fmt, NVT_SPI_NAME, __func__, __LINE__, ##args)
 #else
@@ -103,7 +108,7 @@ extern const uint16_t touch_key_array[TOUCH_KEY_NUM];
 //---Customerized func.---
 #define NVT_TOUCH_PROC 1
 #define NVT_TOUCH_EXT_PROC 1
-#define NVT_TOUCH_MP 1
+#define NVT_TOUCH_MP 0
 #define MT_PROTOCOL_B 1
 #define WAKEUP_GESTURE 1
 #if WAKEUP_GESTURE
@@ -201,12 +206,16 @@ struct nvt_ts_data {
 //	struct regulator *pwr_lab; /* VSP +5V */
 //	struct regulator *pwr_ibb; /* VSN -5V */
 #endif
+//struct mutex reg_lock;
 #ifdef CONFIG_MTK_SPI
 	struct mt_chip_conf spi_ctrl;
 #endif
 #ifdef CONFIG_SPI_MT65XX
     struct mtk_chip_config spi_ctrl;
 #endif
+	struct workqueue_struct *event_wq;
+	struct work_struct suspend_work;
+	struct work_struct resume_work;
 };
 
 #if NVT_TOUCH_PROC

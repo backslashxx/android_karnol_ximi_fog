@@ -63,6 +63,10 @@
 #include <linux/dma-mapping.h>
 #include "focaltech_common.h"
 
+#ifdef CONFIG_PM
+#include <linux/pm_runtime.h>
+#endif
+
 /*****************************************************************************
 * Private constant and macro definitions using #define
 *****************************************************************************/
@@ -172,6 +176,7 @@ struct fts_ts_data {
     struct delayed_work esdcheck_work;
     struct delayed_work prc_work;
     struct work_struct resume_work;
+    struct work_struct suspend_work;
     struct ftxxxx_proc proc;
     spinlock_t irq_lock;
     struct mutex report_mutex;
@@ -192,6 +197,7 @@ struct fts_ts_data {
     bool cover_mode;
     bool charger_mode;
     bool gesture_mode;      /* gesture enable or disable, default: disable */
+    bool aod_changed;
     /* multi-touch */
     struct ts_event *events;
     u8 *bus_tx_buf;
@@ -211,11 +217,11 @@ struct fts_ts_data {
     struct pinctrl_state *pins_suspend;
     struct pinctrl_state *pins_release;
 #endif
-#if defined(CONFIG_FB) || defined(CONFIG_DRM)
-    struct notifier_block fb_notif;
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
-    struct early_suspend early_suspend;
-#endif
+    struct notifier_block drm_notif;
+
+	struct mutex reg_lock;
+	struct device *fts_touch_dev;
+  	struct class *fts_tp_class;
 };
 
 enum _FTS_BUS_TYPE {

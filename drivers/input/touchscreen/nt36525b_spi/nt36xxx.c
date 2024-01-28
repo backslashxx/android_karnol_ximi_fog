@@ -21,6 +21,8 @@
 #include <linux/irq.h>
 #include <linux/gpio.h>
 #include <linux/proc_fs.h>
+#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/input/mt.h>
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
@@ -88,7 +90,7 @@ extern void Boot_Update_Firmware(struct work_struct *work);
 
 #if defined(CONFIG_FB)
 #if defined(CONFIG_DRM_PANEL)
-static struct drm_panel *active_panel;
+struct drm_panel *lcd_active_panel;
 static int nvt_drm_panel_notifier_callback(struct notifier_block *self, unsigned long event, void *data);
 #elif defined(_MSM_DRM_NOTIFY_H_)
 static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long event, void *data);
@@ -1420,6 +1422,15 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 	if (bTouchIsAwake == 0) {
 		pm_wakeup_event(&ts->input_dev->dev, 5000);
 	}
+#ifdef CONFIG_PM
+	if (ts->dev_pm_suspend && ts->is_gesture_mode) {
+		ret = wait_for_completion_timeout(&ts->dev_pm_suspend_completion, msecs_to_jiffies(700));
+		if (!ret) {
+			NVT_ERR("system(spi bus) can't finished resuming procedure, skip it");
+			return IRQ_HANDLED;
+		}
+	}
+#endif
 #endif
 
 	mutex_lock(&ts->lock);
@@ -1467,9 +1478,10 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
    }
 #endif /* POINT_DATA_CHECKSUM */
 
+	input_id = (uint8_t)(point_data[1] >> 3);
 #if WAKEUP_GESTURE
 	if (bTouchIsAwake == 0) {
-		input_id = (uint8_t)(point_data[1] >> 3);
+		//input_id = (uint8_t)(point_data[1] >> 3);
 		nvt_ts_wakeup_gesture_report(input_id, point_data);
 		mutex_unlock(&ts->lock);
 		return IRQ_HANDLED;
@@ -1846,6 +1858,7 @@ disable_vdd_regulator:
 exit:
 	return ret;
 }
+
 */
 #endif
 
@@ -1866,7 +1879,7 @@ static int nvt_ts_check_dt(struct device_node *np)
 		panel = of_drm_find_panel(node);
 		of_node_put(node);
 		if (!IS_ERR(panel)) {
-			active_panel = panel;
+			lcd_active_panel = panel;
 			return 0;
 		}
 	}
@@ -2001,6 +2014,18 @@ out:
 }
 #endif
 
+static void nvt_resume_work(struct work_struct *work)
+{
+	struct nvt_ts_data *ts_core = container_of(work, struct nvt_ts_data, resume_work);
+	nvt_ts_resume(&ts_core->client->dev);
+}
+
+static void nvt_suspend_work(struct work_struct *work)
+{
+	struct nvt_ts_data *ts_core = container_of(work, struct nvt_ts_data, suspend_work);
+	nvt_ts_suspend(&ts_core->client->dev);
+}
+
 /*******************************************************
 Description:
 	Novatek touchscreen driver probe function.
@@ -2106,6 +2131,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 		NVT_ERR("parse dt error\n");
 		goto err_spi_setup;
 	}
+
 /*
 #if WAKEUP_GESTURE
 	ret = nvt_ts_get_regulator(true);
@@ -2120,6 +2146,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 		goto err_enable_regulator;
 	}
 #endif
+
 */
 	//---request and config GPIOs---
 	ret = nvt_gpio_config(ts);
@@ -2130,6 +2157,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 
 	mutex_init(&ts->lock);
 	mutex_init(&ts->xbuf_lock);
+	//mutex_init(&ts->reg_lock);
 
 	//---eng reset before TP_RESX high
 	nvt_eng_reset();
@@ -2372,11 +2400,20 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	}
 #endif
 
+	ts->event_wq = alloc_workqueue("nvt-event-queue",
+		WQ_UNBOUND | WQ_HIGHPRI | WQ_CPU_INTENSIVE, 1);
+	if (!ts->event_wq) {
+		NVT_ERR("Can not create work thread for suspend/resume!!");
+		ret = -ENOMEM;
+		goto err_alloc_work_thread_failed;
+	}
+	INIT_WORK(&ts->resume_work, nvt_resume_work);
+	INIT_WORK(&ts->suspend_work, nvt_suspend_work);
 #if defined(CONFIG_FB)
 #if defined(CONFIG_DRM_PANEL)
 	ts->drm_panel_notif.notifier_call = nvt_drm_panel_notifier_callback;
-	if (active_panel) {
-		ret = drm_panel_notifier_register(active_panel, &ts->drm_panel_notif);
+	if (lcd_active_panel) {
+		ret = drm_panel_notifier_register(lcd_active_panel, &ts->drm_panel_notif);
 		if (ret < 0) {
 			NVT_ERR("register drm_panel_notifier failed. ret=%d\n", ret);
 			goto err_register_drm_panel_notif_failed;
@@ -2412,6 +2449,12 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	NVT_LOG("end\n");
 
 	nvt_irq_enable(true);
+#ifdef CONFIG_PM
+	ts->dev_pm_suspend = false;
+	init_completion(&ts->dev_pm_suspend_completion);
+#endif
+
+	pm_runtime_enable(&ts->client->dev);
 
 //2019.12.06 longcheer taocheng add for charger mode
 #if NVT_USB_PLUGIN
@@ -2435,7 +2478,8 @@ err_register_early_suspend_failed:
 err_init_lct_tp_work_failed:
 uninit_lct_tp_work();
 #endif
-
+	destroy_workqueue(ts->event_wq);
+err_alloc_work_thread_failed:
 #if LCT_TP_GRIP_AREA_EN
 err_init_lct_tp_grip_area_failed:
 uninit_lct_tp_grip_area();
@@ -2514,6 +2558,7 @@ err_enable_regulator:
 	nvt_ts_get_regulator(false);
 err_get_regulator:
 #endif
+
 */
 err_spi_setup:
 err_ckeck_full_duplex:
@@ -2551,8 +2596,8 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 
 #if defined(CONFIG_FB)
 #if defined(CONFIG_DRM_PANEL)
-	if (active_panel) {
-		if (drm_panel_notifier_unregister(active_panel, &ts->drm_panel_notif))
+	if (lcd_active_panel) {
+		if (drm_panel_notifier_unregister(lcd_active_panel, &ts->drm_panel_notif))
 			NVT_ERR("Error occurred while unregistering drm_panel_notifier.\n");
 	}
 #elif defined(_MSM_DRM_NOTIFY_H_)
@@ -2614,11 +2659,13 @@ uninit_lct_tp_info();
 
 	mutex_destroy(&ts->xbuf_lock);
 	mutex_destroy(&ts->lock);
+
 /*
 #if WAKEUP_GESTURE
 	nvt_ts_enable_regulator(false);
 	nvt_ts_get_regulator(false);
 #endif
+
 */
 	nvt_gpio_deconfig(ts);
 
@@ -2657,8 +2704,8 @@ static void nvt_ts_shutdown(struct spi_device *client)
 
 #if defined(CONFIG_FB)
 #if defined(CONFIG_DRM_PANEL)
-	if (active_panel) {
-		if (drm_panel_notifier_unregister(active_panel, &ts->drm_panel_notif))
+	if (lcd_active_panel) {
+		if (drm_panel_notifier_unregister(lcd_active_panel, &ts->drm_panel_notif))
 			NVT_ERR("Error occurred while unregistering drm_panel_notifier.\n");
 	}
 #elif defined(_MSM_DRM_NOTIFY_H_)
@@ -2945,12 +2992,14 @@ static int nvt_drm_panel_notifier_callback(struct notifier_block *self, unsigned
 		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
 			if (*blank == DRM_PANEL_BLANK_POWERDOWN) {
 				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-				nvt_ts_suspend(&ts->client->dev);
+				flush_workqueue(ts->event_wq);
+				queue_work(ts->event_wq, &ts->suspend_work);
 			}
 		} else if (event == DRM_PANEL_EVENT_BLANK) {
 			if (*blank == DRM_PANEL_BLANK_UNBLANK) {
 				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-				nvt_ts_resume(&ts->client->dev);
+				flush_workqueue(ts->event_wq);
+				queue_work(ts->event_wq, &ts->resume_work);
 			}
 		}
 	}
@@ -2973,12 +3022,14 @@ static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long 
 		if (event == MSM_DRM_EARLY_EVENT_BLANK) {
 			if (*blank == MSM_DRM_BLANK_POWERDOWN) {
 				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-				nvt_ts_suspend(&ts->client->dev);
+				flush_workqueue(ts->event_wq);
+				queue_work(ts->event_wq, &ts->suspend_work);			
 			}
 		} else if (event == MSM_DRM_EVENT_BLANK) {
 			if (*blank == MSM_DRM_BLANK_UNBLANK) {
 				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-				nvt_ts_resume(&ts->client->dev);
+				flush_workqueue(ts->event_wq);
+				queue_work(ts->event_wq, &ts->resume_work);
 			}
 		}
 	}
@@ -2997,13 +3048,15 @@ static int nvt_fb_notifier_callback(struct notifier_block *self, unsigned long e
 		blank = evdata->data;
 		if (*blank == FB_BLANK_POWERDOWN) {
 			NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-			nvt_ts_suspend(&ts->client->dev);
+			flush_workqueue(ts->event_wq);
+			queue_work(ts->event_wq, &ts->suspend_work);
 		}
 	} else if (evdata && evdata->data && event == FB_EVENT_BLANK) {
 		blank = evdata->data;
 		if (*blank == FB_BLANK_UNBLANK) {
 			NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-			nvt_ts_resume(&ts->client->dev);
+			flush_workqueue(ts->event_wq);
+			queue_work(ts->event_wq, &ts->resume_work);
 		}
 	}
 
@@ -3036,6 +3089,34 @@ static void nvt_ts_late_resume(struct early_suspend *h)
 }
 #endif
 
+#ifdef CONFIG_PM
+static int nvt_pm_suspend(struct device *dev)
+{
+	struct nvt_ts_data *ts = dev_get_drvdata(dev);
+
+	ts->dev_pm_suspend = true;
+	reinit_completion(&ts->dev_pm_suspend_completion);
+	NVT_LOG("pm suspend");
+
+	return 0;
+}
+
+static int nvt_pm_resume(struct device *dev)
+{
+	struct nvt_ts_data *ts = dev_get_drvdata(dev);
+
+	ts->dev_pm_suspend = false;
+	complete(&ts->dev_pm_suspend_completion);
+	NVT_LOG("pm resume");
+
+	return 0;
+}
+
+static const struct dev_pm_ops nvt_dev_pm_ops = {
+	.suspend = nvt_pm_suspend,
+	.resume = nvt_pm_resume,
+};
+#endif
 static const struct spi_device_id nvt_ts_id[] = {
 	{ NVT_SPI_NAME, 0 },
 	{ }
@@ -3056,9 +3137,13 @@ static struct spi_driver nvt_spi_driver = {
 	.driver = {
 		.name	= NVT_SPI_NAME,
 		.owner	= THIS_MODULE,
+#ifdef CONFIG_PM
+		.pm = &nvt_dev_pm_ops,
+#endif
 #ifdef CONFIG_OF
 		.of_match_table = nvt_match_table,
 #endif
+	.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 };
 
@@ -3132,6 +3217,8 @@ late_initcall(nvt_driver_init);
 #else
 late_initcall(nvt_driver_init);
 #endif
+
+//device_initcall(nvt_driver_init);
 module_exit(nvt_driver_exit);
 
 MODULE_DESCRIPTION("Novatek Touchscreen Driver");

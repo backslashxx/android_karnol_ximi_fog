@@ -37,19 +37,8 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
-#if defined(CONFIG_FB)
 #include <linux/notifier.h>
-#include <linux/fb.h>
-#elif defined(CONFIG_DRM)
-#if defined(CONFIG_DRM_PANEL)
 #include <drm/drm_panel.h>
-#else
-#include <linux/msm_drm_notify.h>
-#endif
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
-#include <linux/earlysuspend.h>
-#define FTS_SUSPEND_LEVEL 1     /* Early-suspend level */
-#endif
 #include "focaltech_core.h"
 
 /*****************************************************************************
@@ -81,6 +70,7 @@ extern touchscreen_usb_plugin_data_t g_touchscreen_usb_pulgin;
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 struct fts_ts_data *fts_data;
+extern void set_fts_ts_variant(bool en);
 
 #if LCT_TP_USB_PLUGIN
 void fts_ts_usb_event_callback(void)
@@ -1304,6 +1294,7 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
     return 0;
 }
 
+
 static void fts_resume_work(struct work_struct *work)
 {
     struct fts_ts_data *ts_data = container_of(work, struct fts_ts_data,
@@ -1312,191 +1303,56 @@ static void fts_resume_work(struct work_struct *work)
     fts_ts_resume(ts_data->dev);
 }
 
-#if defined(CONFIG_FB)
-static int fb_notifier_callback(struct notifier_block *self,
-                                unsigned long event, void *data)
+static void fts_suspend_work(struct work_struct *work)
 {
-    struct fb_event *evdata = data;
-    int *blank = NULL;
-    struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
-                                  fb_notif);
+    struct fts_ts_data *ts_data = container_of(work, struct fts_ts_data,
+                    suspend_work);
 
-    if (!evdata) {
-        FTS_ERROR("evdata is null");
-        return 0;
-    }
-
-    if (!(event == FB_EARLY_EVENT_BLANK || event == FB_EVENT_BLANK)) {
-        FTS_INFO("event(%lu) do not need process\n", event);
-        return 0;
-    }
-
-    blank = evdata->data;
-    FTS_INFO("FB event:%lu,blank:%d", event, *blank);
-    switch (*blank) {
-    case FB_BLANK_UNBLANK:
-        if (FB_EARLY_EVENT_BLANK == event) {
-            FTS_INFO("resume: event = %lu, not care\n", event);
-        } else if (FB_EVENT_BLANK == event) {
-            queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
-        }
-        break;
-    case FB_BLANK_POWERDOWN:
-        if (FB_EARLY_EVENT_BLANK == event) {
-            cancel_work_sync(&fts_data->resume_work);
-            fts_ts_suspend(ts_data->dev);
-        } else if (FB_EVENT_BLANK == event) {
-            FTS_INFO("suspend: event = %lu, not care\n", event);
-        }
-        break;
-    default:
-        FTS_INFO("FB BLANK(%d) do not need process\n", *blank);
-        break;
-    }
-
-    return 0;
-}
-#elif defined(CONFIG_DRM)
-#if defined(CONFIG_DRM_PANEL)
-static struct drm_panel *active_panel;
-
-static int drm_check_dt(struct device_node *np)
-{
-    int i = 0;
-    int count = 0;
-    struct device_node *node = NULL;
-    struct drm_panel *panel = NULL;
-
-    count = of_count_phandle_with_args(np, "panel", NULL);
-    if (count <= 0) {
-        FTS_ERROR("find drm_panel count(%d) fail", count);
-        return -ENODEV;
-    }
-
-    for (i = 0; i < count; i++) {
-        node = of_parse_phandle(np, "panel", i);
-        panel = of_drm_find_panel(node);
-        of_node_put(node);
-        if (!IS_ERR(panel)) {
-            FTS_INFO("find drm_panel successfully");
-            active_panel = panel;
-            return 0;
-        }
-    }
-
-    FTS_ERROR("no find drm_panel");
-    return -ENODEV;
-}
-
-static int drm_notifier_callback(struct notifier_block *self,
-                                 unsigned long event, void *data)
-{
-    struct msm_drm_notifier *evdata = data;
-    int *blank = NULL;
-    struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
-                                  fb_notif);
-
-    if (!evdata) {
-        FTS_ERROR("evdata is null");
-        return 0;
-    }
-
-    if (!((event == DRM_PANEL_EARLY_EVENT_BLANK )
-          || (event == DRM_PANEL_EVENT_BLANK))) {
-        FTS_INFO("event(%lu) do not need process\n", event);
-        return 0;
-    }
-
-    blank = evdata->data;
-    FTS_INFO("DRM event:%lu,blank:%d", event, *blank);
-    switch (*blank) {
-    case DRM_PANEL_BLANK_UNBLANK:
-        if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-            FTS_INFO("resume: event = %lu, not care\n", event);
-        } else if (DRM_PANEL_EVENT_BLANK == event) {
-            queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
-        }
-        break;
-    case DRM_PANEL_BLANK_POWERDOWN:
-        if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-            cancel_work_sync(&fts_data->resume_work);
-            fts_ts_suspend(ts_data->dev);
-        } else if (DRM_PANEL_EVENT_BLANK == event) {
-            FTS_INFO("suspend: event = %lu, not care\n", event);
-        }
-        break;
-    default:
-        FTS_INFO("DRM BLANK(%d) do not need process\n", *blank);
-        break;
-    }
-
-    return 0;
-}
-#else
-static int drm_notifier_callback(struct notifier_block *self,
-                                 unsigned long event, void *data)
-{
-    struct msm_drm_notifier *evdata = data;
-    int *blank = NULL;
-    struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
-                                  fb_notif);
-
-    if (!evdata) {
-        FTS_ERROR("evdata is null");
-        return 0;
-    }
-
-    if (!((event == MSM_DRM_EARLY_EVENT_BLANK )
-          || (event == MSM_DRM_EVENT_BLANK))) {
-        FTS_INFO("event(%lu) do not need process\n", event);
-        return 0;
-    }
-
-    blank = evdata->data;
-    FTS_INFO("DRM event:%lu,blank:%d", event, *blank);
-    switch (*blank) {
-    case MSM_DRM_BLANK_UNBLANK:
-        if (MSM_DRM_EARLY_EVENT_BLANK == event) {
-            FTS_INFO("resume: event = %lu, not care\n", event);
-        } else if (MSM_DRM_EVENT_BLANK == event) {
-            queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
-        }
-        break;
-    case MSM_DRM_BLANK_POWERDOWN:
-        if (MSM_DRM_EARLY_EVENT_BLANK == event) {
-            cancel_work_sync(&fts_data->resume_work);
-            fts_ts_suspend(ts_data->dev);
-        } else if (MSM_DRM_EVENT_BLANK == event) {
-            FTS_INFO("suspend: event = %lu, not care\n", event);
-        }
-        break;
-    default:
-        FTS_INFO("DRM BLANK(%d) do not need process\n", *blank);
-        break;
-    }
-
-    return 0;
-}
-#endif
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
-static void fts_ts_early_suspend(struct early_suspend *handler)
-{
-    struct fts_ts_data *ts_data = container_of(handler, struct fts_ts_data,
-                                  early_suspend);
-
-    cancel_work_sync(&fts_data->resume_work);
     fts_ts_suspend(ts_data->dev);
 }
 
-static void fts_ts_late_resume(struct early_suspend *handler)
+static int drm_notifier_callback(struct notifier_block *self,
+                                 unsigned long event, void *data)
 {
-    struct fts_ts_data *ts_data = container_of(handler, struct fts_ts_data,
-                                  early_suspend);
+    struct drm_notify_data *evdata = data;
+    int *blank = NULL;
+    
+    if (!evdata) {
+        FTS_ERROR("evdata is null");
+        return 0;
+    }
 
-    queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
+    if (!((event == DRM_EARLY_EVENT_BLANK )
+          || (event == DRM_EVENT_BLANK))) {
+        FTS_DEBUG("event(%lu) do not need process\n", event);
+        return 0;
+    }
+
+    blank = evdata->data;
+    FTS_DEBUG("DRM event:%lu,blank:%d", event, *blank);
+    switch (*blank) {
+    case DRM_BLANK_UNBLANK:
+        if (DRM_EARLY_EVENT_BLANK == event) {
+            FTS_DEBUG("resume: event = %lu, not care\n", event);
+        } else if (DRM_EVENT_BLANK == event) {
+            queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
+        }
+        break;
+    case DRM_BLANK_POWERDOWN:
+        if (DRM_EARLY_EVENT_BLANK == event) {
+            queue_work(fts_data->ts_workqueue,
+                    &fts_data->suspend_work);
+        } else if (DRM_EVENT_BLANK == event) {
+            FTS_DEBUG("suspend: event = %lu, not care\n", event);
+        }
+        break;
+    default:
+        FTS_DEBUG("DRM BLANK(%d) do not need process\n", *blank);
+        break;
+    }
+
+    return 0;
 }
-#endif
-
 static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 {
     int ret = 0;
@@ -1515,17 +1371,6 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
         if (ret)
             FTS_ERROR("device-tree parse fail");
 
-/*
-#if defined(CONFIG_DRM)
-#if defined(CONFIG_DRM_PANEL)
-        ret = drm_check_dt(ts_data->dev->of_node);
-        if (ret) {
-            FTS_ERROR("parse drm-panel fail");
-        }
-#endif
-
-#endif
-*/
     } else {
         if (ts_data->dev->platform_data) {
             memcpy(ts_data->pdata, ts_data->dev->platform_data, pdata_size);
@@ -1647,46 +1492,40 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 
     if (ts_data->ts_workqueue) {
         INIT_WORK(&ts_data->resume_work, fts_resume_work);
+        INIT_WORK(&ts_data->suspend_work, fts_suspend_work);
     }
 
 #if defined(CONFIG_PM) && FTS_PATCH_COMERR_PM
     init_completion(&ts_data->pm_completion);
     ts_data->pm_suspend = false;
 #endif
+	pm_runtime_enable(ts_data->dev);
 
-#if defined(CONFIG_FB)
-    ts_data->fb_notif.notifier_call = fb_notifier_callback;
-    ret = fb_register_client(&ts_data->fb_notif);
+    ts_data->drm_notif.notifier_call = drm_notifier_callback;
+    ret = drm_register_client(&ts_data->drm_notif);
     if (ret) {
-        FTS_ERROR("[FB]Unable to register fb_notifier: %d", ret);
+        FTS_ERROR("Unable to register drm_notifier: %d\n", ret);
     }
-#elif defined(CONFIG_DRM)
-    ts_data->fb_notif.notifier_call = drm_notifier_callback;
-#if defined(CONFIG_DRM_PANEL)
-    if (active_panel) {
-        ret = drm_panel_notifier_register(active_panel, &ts_data->fb_notif);
-        if (ret)
-            FTS_ERROR("[DRM]drm_panel_notifier_register fail: %d\n", ret);
-    }
-#else
-    ret = msm_drm_register_client(&ts_data->fb_notif);
-    if (ret) {
-        FTS_ERROR("[DRM]Unable to register fb_notifier: %d\n", ret);
-    }
-#endif
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
-    ts_data->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + FTS_SUSPEND_LEVEL;
-    ts_data->early_suspend.suspend = fts_ts_early_suspend;
-    ts_data->early_suspend.resume = fts_ts_late_resume;
-    register_early_suspend(&ts_data->early_suspend);
-#endif
 
+	if (ts_data->fts_tp_class == NULL) {
+		if (ts_data->fts_tp_class) {
+			ts_data->fts_touch_dev = device_create(ts_data->fts_tp_class, NULL, 0x38, ts_data, "tp_dev");
+			if (IS_ERR(ts_data->fts_touch_dev)) {
+				FTS_ERROR("Failed to create device !");
+				goto err_class_create;
+			}
+			dev_set_drvdata(ts_data->fts_touch_dev, ts_data);
+		}
+	}
 #if LCT_TP_USB_PLUGIN
 	g_touchscreen_usb_pulgin.event_callback = fts_ts_usb_event_callback;
 #endif
 
     FTS_FUNC_EXIT();
     return 0;
+err_class_create:
+	class_destroy(ts_data->fts_tp_class);
+	ts_data->fts_tp_class = NULL;
 
 err_irq_req:
 #if FTS_POWER_SOURCE_CUST_EN
@@ -1749,20 +1588,8 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
     if (ts_data->ts_workqueue)
         destroy_workqueue(ts_data->ts_workqueue);
 
-#if defined(CONFIG_FB)
-    if (fb_unregister_client(&ts_data->fb_notif))
-        FTS_ERROR("[FB]Error occurred while unregistering fb_notifier.");
-#elif defined(CONFIG_DRM)
-#if defined(CONFIG_DRM_PANEL)
-    if (active_panel)
-        drm_panel_notifier_unregister(active_panel, &ts_data->fb_notif);
-#else
-    if (msm_drm_unregister_client(&ts_data->fb_notif))
-        FTS_ERROR("[DRM]Error occurred while unregistering fb_notifier.\n");
-#endif
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
-    unregister_early_suspend(&ts_data->early_suspend);
-#endif
+    if (drm_unregister_client(&ts_data->drm_notif))
+        FTS_ERROR("Error occurred while unregistering drm_notifier.\n");
 
     if (gpio_is_valid(ts_data->pdata->reset_gpio))
         gpio_free(ts_data->pdata->reset_gpio);
@@ -1948,6 +1775,7 @@ static int fts_ts_probe(struct spi_device *spi)
     }
 
     FTS_INFO("Touch Screen(SPI BUS) driver prboe successfully");
+    set_fts_ts_variant(true);
     return 0;
 }
 
