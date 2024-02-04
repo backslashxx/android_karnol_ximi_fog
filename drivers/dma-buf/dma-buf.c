@@ -34,6 +34,7 @@
 #include <linux/poll.h>
 #include <linux/reservation.h>
 #include <linux/mm.h>
+#include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/atomic.h>
 #include <linux/sched/signal.h>
@@ -1641,4 +1642,5 @@ static void __exit dma_buf_deinit(void)
 	dma_buf_uninit_debugfs();
 	kern_unmount(dma_buf_mnt);
 }
-__exitcall(dma_buf_deinit);
+module_exit(dma_buf_deinit);
+MODULE_LICENSE("GPL");

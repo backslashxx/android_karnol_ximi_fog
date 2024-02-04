@@ -2125,6 +2125,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 
 	return ncsw;
 }
+EXPORT_SYMBOL_GPL(wake_up_state);
 
 /***
  * kick_process - kick a running thread to enter/exit the kernel
