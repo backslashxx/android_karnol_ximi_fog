@@ -1343,7 +1343,15 @@ int lct_create_procfs(struct fts_ts_data *ts_data)
 	}
 #endif
 
-	return ret;
+    ret = init_lct_tp_gesture(lct_fts_tp_gesture_callback);
+    if (ret < 0) {
+        FTS_ERROR("init_lct_tp_gesture Failed!");
+        goto err_init_lct_tp_gesture_fail;
+    } else {
+        FTS_INFO("init_lct_tp_gesture Succeeded!");
+    }
+
+    return ret;
 
 #if LCT_TP_WORK_EN
 err_init_lct_tp_work_fail:
@@ -1354,6 +1362,8 @@ err_init_lct_tp_work_fail:
 	err_init_lct_tp_grip_area_fail:
 	uninit_lct_tp_grip_area();
 #endif
+err_init_lct_tp_gesture_fail:
+    uninit_lct_tp_gesture();
 
 err_init_lct_tp_info_fail:
 	uninit_lct_tp_info();
@@ -1371,6 +1381,7 @@ int lct_remove_procfs(struct fts_ts_data *ts_data)
 #if LCT_TP_GRIP_AREA_EN
 		uninit_lct_tp_grip_area();
 #endif
+    uninit_lct_tp_gesture();
 
 	uninit_lct_tp_info();
 	return 0;

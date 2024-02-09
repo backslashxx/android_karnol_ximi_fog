@@ -2286,8 +2286,8 @@ static int dsi_panel_parse_reset_sequence(struct dsi_panel *panel)
 	fts_reset_seq = utils->read_bool(utils->data,
 		"qcom,mdss-dsi-focaltech-reset-sequence");
 	
-	//if (fts_ts_variant && !fts_reset_seq) 
-	//	return 0;
+	if (fts_ts_variant && !fts_reset_seq) 
+		return 0;
 
 	arr = utils->get_property(utils->data,
 			"qcom,mdss-dsi-reset-sequence", &length);

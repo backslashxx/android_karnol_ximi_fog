@@ -37,7 +37,7 @@
 /******************************************************************************
 * Private constant and macro definitions using #define
 *****************************************************************************/
-#define KEY_GESTURE_U                           KEY_U
+#define KEY_GESTURE_U                           KEY_WAKEUP
 #define KEY_GESTURE_UP                          KEY_UP
 #define KEY_GESTURE_DOWN                        KEY_DOWN
 #define KEY_GESTURE_LEFT                        KEY_LEFT
@@ -125,10 +125,10 @@ static ssize_t fts_gesture_store(
     mutex_lock(&ts_data->input_dev->mutex);
     if (FTS_SYSFS_ECHO_ON(buf)) {
         FTS_DEBUG("enable gesture");
-        ts_data->gesture_mode = ENABLE;
+        lct_fts_tp_gesture_callback(true);
     } else if (FTS_SYSFS_ECHO_OFF(buf)) {
         FTS_DEBUG("disable gesture");
-        ts_data->gesture_mode = DISABLE;
+        lct_fts_tp_gesture_callback(false);
     }
     mutex_unlock(&ts_data->input_dev->mutex);
 
@@ -405,11 +405,29 @@ int fts_gesture_resume(struct fts_ts_data *ts_data)
     return 0;
 }
 
+#define WAKEUP_OFF 4
+#define WAKEUP_ON 5
+int fts_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
+{
+    FTS_INFO("Enter. type = %u, code = %u, value = %d", type, code, value);
+    if (type == EV_SYN && code == SYN_CONFIG) {
+        if (value == WAKEUP_OFF)
+            lct_fts_tp_gesture_callback(false);
+        else if (value == WAKEUP_ON)
+            lct_fts_tp_gesture_callback(true);
+    }
+    FTS_INFO("Exit");
+    return 0;
+}
+
 int fts_gesture_init(struct fts_ts_data *ts_data)
 {
     struct input_dev *input_dev = ts_data->input_dev;
 
     FTS_FUNC_ENTER();
+
+    input_dev->event =fts_gesture_switch;
+
     input_set_capability(input_dev, EV_KEY, KEY_POWER);
     input_set_capability(input_dev, EV_KEY, KEY_GESTURE_U);
     input_set_capability(input_dev, EV_KEY, KEY_GESTURE_UP);

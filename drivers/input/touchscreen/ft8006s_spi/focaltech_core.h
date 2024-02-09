@@ -119,6 +119,7 @@
  // include  longcheer header
 #include "../lct_tp_info.h"
 #include "../lct_tp_selftest.h"
+#include "../lct_tp_gesture.h"
 #if LCT_TP_WORK_EN
 #include "../lct_tp_work.h"
 #endif
@@ -260,6 +261,9 @@ int lct_remove_procfs(struct fts_ts_data *ts_data);
 
 /* Longcheer get firmware version */
 int lct_fts_get_tpfwver(const char *cmd);
+
+/* Longcheer set gesture mode */
+int lct_fts_tp_gesture_callback(bool flag);
 
 /* FTS TEST */
 #if FTS_TEST_EN

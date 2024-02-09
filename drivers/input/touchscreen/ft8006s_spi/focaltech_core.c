@@ -71,6 +71,29 @@ extern touchscreen_usb_plugin_data_t g_touchscreen_usb_pulgin;
 *****************************************************************************/
 struct fts_ts_data *fts_data;
 extern void set_fts_ts_variant(bool en);
+static bool delay_gesture = false;
+extern void set_lcd_reset_gpio_keep_high(bool en);
+
+int lct_fts_tp_gesture_callback(bool flag)
+{
+    struct fts_ts_data *ts_data = fts_data;
+    if (ts_data->suspended) {
+        delay_gesture = true;
+        FTS_INFO("The gesture mode will be %s the next time you wakes up.", flag?"enabled":"disabled");
+        return -1;
+    }
+     //check this funct
+    set_lct_tp_gesture_status(flag);
+    //set_lcd_reset_gpio_keep_high(flag);
+    if (flag) {
+        	ts_data->gesture_mode = ENABLE;
+			
+	}
+    else {
+        	ts_data->gesture_mode = DISABLE;
+	 }
+    return 0;
+}
 
 #if LCT_TP_USB_PLUGIN
 void fts_ts_usb_event_callback(void)
@@ -745,7 +768,7 @@ static irqreturn_t fts_irq_handler(int irq, void *data)
     int ret = 0;
     struct fts_ts_data *ts_data = fts_data;
 
-    if ((ts_data->suspended) && (ts_data->pm_suspend)) {
+    if ((ts_data->gesture_mode) && (ts_data->pm_suspend)) {
         ret = wait_for_completion_timeout(
                   &ts_data->pm_completion,
                   msecs_to_jiffies(FTS_TIMEOUT_COMERR_PM));
@@ -1618,6 +1641,7 @@ static int fts_ts_suspend(struct device *dev)
     struct fts_ts_data *ts_data = fts_data;
 
     FTS_FUNC_ENTER();
+    FTS_INFO("start tp suspend");
     if (ts_data->suspended) {
         FTS_INFO("Already in suspend state");
         return 0;
@@ -1635,7 +1659,8 @@ static int fts_ts_suspend(struct device *dev)
     if (ts_data->gesture_mode) {
         fts_gesture_suspend(ts_data);
     } else {
-
+	//check this
+        //fts_irq_disable();
         FTS_INFO("make TP enter into sleep mode");
         ret = fts_write_reg(FTS_REG_POWER_MODE, FTS_REG_POWER_MODE_SLEEP);
         if (ret < 0)
@@ -1649,6 +1674,8 @@ static int fts_ts_suspend(struct device *dev)
             }
 #endif
         }
+        /* touch reset gpio pull down */
+//      gpio_direction_output(fts_data->pdata->reset_gpio, 0 );
     }
 
     fts_release_all_finger();
@@ -1662,10 +1689,22 @@ static int fts_ts_resume(struct device *dev)
     struct fts_ts_data *ts_data = fts_data;
 
     FTS_FUNC_ENTER();
+	FTS_INFO("start to enter tp resume");
     if (!ts_data->suspended) {
         FTS_DEBUG("Already in awake state");
         return 0;
     }
+	/* For 1.8v no electricity */
+/*
+#if defined(CONFIG_TOUCHSCREEN_COMMON)
+    if(!tpd_gesture_flag)
+	tpd_spi_cs_gpio_output(1);
+#endif
+*/
+//check this
+    /* if gesture_mode enabled, touch reset gpio pull up */
+    if (!ts_data->gesture_mode)
+        gpio_direction_output(fts_data->pdata->reset_gpio, 1 );
 
     fts_release_all_finger();
 
@@ -1689,6 +1728,11 @@ static int fts_ts_resume(struct device *dev)
     }
 
     ts_data->suspended = false;
+
+    if (delay_gesture) {
+        lct_fts_tp_gesture_callback(!ts_data->gesture_mode);
+        delay_gesture = false;
+    }
 
 #if LCT_TP_WORK_EN
 	if (get_lct_tp_work_status())
@@ -1742,6 +1786,7 @@ static int fts_ts_probe(struct spi_device *spi)
 {
     int ret = 0;
     struct fts_ts_data *ts_data = NULL;
+    delay_gesture = false;
 
     FTS_INFO("Touch Screen(SPI BUS) driver prboe...");
     spi->mode = SPI_MODE_0;
@@ -1848,7 +1893,8 @@ static void __exit fts_ts_exit(void)
     spi_unregister_driver(&fts_ts_driver);
 }
 
-module_init(fts_ts_init);
+//module_init(fts_ts_init);
+late_initcall(fts_ts_init);
 module_exit(fts_ts_exit);
 
 MODULE_AUTHOR("FocalTech Driver Team");
