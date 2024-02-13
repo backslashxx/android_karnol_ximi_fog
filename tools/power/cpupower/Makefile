@@ -188,8 +188,8 @@ export QUIET ECHO
 
 # if DEBUG is enabled, then we do not strip or optimize
 ifeq ($(strip $(DEBUG)),true)
-	CFLAGS += -O1 -g -DDEBUG
-	STRIPCMD = /bin/true -Since_we_are_debugging
+	CFLAGS += $(OPTIMIZATION) -fomit-frame-pointer
+	STRIPCMD = $(STRIP) -s --remove-section=.note --remove-section=.comment
 else
 	CFLAGS += $(OPTIMIZATION) -fomit-frame-pointer
 	STRIPCMD = $(STRIP) -s --remove-section=.note --remove-section=.comment
