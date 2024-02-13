@@ -182,6 +182,7 @@ int qdf_wake_up_process(qdf_thread_t *thread)
 }
 qdf_export_symbol(qdf_wake_up_process);
 
+#ifdef CONFIG_FTRACE
 /* save_stack_trace_tsk() is exported for:
  * 1) non-arm architectures
  * 2) arm architectures in kernel versions >=4.14
@@ -210,6 +211,7 @@ void qdf_print_thread_trace(qdf_thread_t *thread)
 void qdf_print_thread_trace(qdf_thread_t *thread) { }
 #endif /* KERNEL_VERSION(4, 14, 0) */
 qdf_export_symbol(qdf_print_thread_trace);
+#endif
 
 qdf_thread_t *qdf_get_current_task(void)
 {
