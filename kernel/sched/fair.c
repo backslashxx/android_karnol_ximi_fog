@@ -4007,8 +4007,10 @@ static inline void adjust_cpus_for_packing(struct task_struct *p,
 	if (*best_idle_cpu == -1 || *target_cpu == -1)
 		return;
 
+#ifdef CONFIG_SCHED_WALT
 	if (prefer_spread_on_idle(*best_idle_cpu, false))
 		fbt_env->need_idle |= 2;
+#endif 
 
 	if (task_rtg_high_prio(p) && walt_nr_rtg_high_prio(*target_cpu) > 0) {
 		*target_cpu = -1;
@@ -10738,11 +10740,13 @@ static int load_balance(int this_cpu, struct rq *this_rq,
 		.loop		= 0,
 	};
 
+#ifdef CONFIG_SCHED_WALT
 	env.prefer_spread = (idle != CPU_NOT_IDLE &&
 				prefer_spread_on_idle(this_cpu,
 				idle == CPU_NEWLY_IDLE) &&
 				!((sd->flags & SD_ASYM_CPUCAPACITY) &&
 				 !is_asym_cap_cpu(this_cpu)));
+#endif
 
 	cpumask_and(cpus, sched_domain_span(sd), cpu_active_mask);
 
@@ -11266,9 +11270,11 @@ static void rebalance_domains(struct rq *rq, enum cpu_idle_type idle)
 		}
 		max_cost += sd->max_newidle_lb_cost;
 
+#ifdef CONFIG_SCHED_WALT
 		if (!sd_overutilized(sd) && !prefer_spread_on_idle(cpu,
 					idle == CPU_NEWLY_IDLE))
 			continue;
+#endif
 
 		if (!(sd->flags & SD_LOAD_BALANCE))
 			continue;
@@ -11519,6 +11525,7 @@ static void nohz_balancer_kick(struct rq *rq)
 	if (time_before(now, nohz.next_balance))
 		goto out;
 
+#ifdef CONFIG_SCHED_WALT
 	/*
 	 * With EAS, no-hz idle balance is allowed only when the CPU
 	 * is overutilized and has 2 tasks. The misfit task migration
@@ -11530,6 +11537,7 @@ static void nohz_balancer_kick(struct rq *rq)
 			flags = NOHZ_KICK_MASK;
 		goto out;
 	}
+#endif
 
 	if (rq->nr_running >= 2) {
 		flags = NOHZ_KICK_MASK;
@@ -11897,7 +11905,9 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 	int pulled_task = 0;
 	u64 curr_cost = 0;
 	u64 avg_idle = this_rq->avg_idle;
+#ifdef CONFIG_SCHED_WALT
 	bool prefer_spread = prefer_spread_on_idle(this_cpu, true);
+#endif
 	bool force_lb = (!is_min_capacity_cpu(this_cpu) &&
 				silver_has_big_tasks() &&
 				sysctl_sched_force_lb_enable &&
@@ -11919,8 +11929,10 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 	if (!cpu_active(this_cpu))
 		return 0;
 
+#ifdef CONFIG_SCHED_WALT
 	if (force_lb || prefer_spread)
 		avg_idle = ULLONG_MAX;
+#endif
 	/*
 	 * This is OK, because current is on_cpu, which avoids it being picked
 	 * for load-balance and preemption/IRQs are still disabled avoiding
@@ -11954,11 +11966,12 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 		if (!(sd->flags & SD_LOAD_BALANCE))
 			continue;
 
+#ifdef CONFIG_SCHED_WALT
 		if (prefer_spread && !force_lb &&
 			(sd->flags & SD_ASYM_CPUCAPACITY) &&
 			!is_asym_cap_cpu(this_cpu))
 			avg_idle = this_rq->avg_idle;
-
+#endif
 		if (avg_idle < curr_cost + sd->max_newidle_lb_cost) {
 			update_next_balance(sd, &next_balance);
 			break;
