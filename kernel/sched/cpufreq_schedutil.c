@@ -953,8 +953,8 @@ static ssize_t exp_util_store(struct gov_attr_set *attr_set, const char *buf,
 	return count;
 }
 
-static struct governor_attr up_rate_limit_us = __ATTR_RW(up_rate_limit_us);
-static struct governor_attr down_rate_limit_us = __ATTR_RW(down_rate_limit_us);
+static struct governor_attr up_rate_limit_us = __ATTR_RO(up_rate_limit_us);
+static struct governor_attr down_rate_limit_us = __ATTR_RO(down_rate_limit_us);
 static struct governor_attr exp_util = __ATTR_RW(exp_util);
 
 static ssize_t hispeed_load_show(struct gov_attr_set *attr_set, char *buf)
