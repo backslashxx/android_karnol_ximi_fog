@@ -3310,6 +3310,7 @@
 		BW_OPP_ENTRY_DDR(1555, 8, 0x80); /*11863 MB/s */
 		BW_OPP_ENTRY_DDR(1804, 8, 0x80); /*13763 MB/s */
 		BW_OPP_ENTRY_DDR(2092, 8, 0x80); /*15960 MB/s */
+		BW_OPP_ENTRY_DDR(2400, 8, 0x80); /* OVERCLOCK */
 	};
 
 	suspendable_ddr4_bw_opp_table: suspendable-ddr4-bw-opp-table {
@@ -3322,6 +3323,7 @@
 		BW_OPP_ENTRY_DDR(1555, 8, 0x80); /*11863 MB/s */
 		BW_OPP_ENTRY_DDR(1804, 8, 0x80); /*13763 MB/s */
 		BW_OPP_ENTRY_DDR(2092, 8, 0x80); /*15960 MB/s */
+		BW_OPP_ENTRY_DDR(2400, 8, 0x80); /* OVERCLOCK */
 	};
 
 	cpu_cpu_ddr_bw: qcom,cpu-cpu-ddr-bw {
@@ -3373,9 +3375,9 @@
 			qcom,cachemiss-ev = <0x17>;
 			qcom,stall-cycle-ev = <0xE7>;
 			qcom,core-dev-table =
-				< 1190400 MHZ_TO_MBPS( 547, 8) >,
-				< 1516800 MHZ_TO_MBPS( 768, 8) >,
-				< 1804800 MHZ_TO_MBPS(1017, 8) >;
+				< 1190400 MHZ_TO_MBPS(1017, 8) >,
+				< 1516800 MHZ_TO_MBPS(1555, 8) >,
+				< 1804800 MHZ_TO_MBPS(2092, 8) >;
 		};
 
 		cpu0_computemon: qcom,cpu0-computemon {
@@ -3383,9 +3385,9 @@
 			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
 			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
-				< 1190400 MHZ_TO_MBPS( 547, 8) >,
-				< 1516800 MHZ_TO_MBPS( 768, 8) >,
-				< 1804800 MHZ_TO_MBPS(1017, 8) >;
+				< 1190400 MHZ_TO_MBPS(1017, 8) >,
+				< 1516800 MHZ_TO_MBPS(1555, 8) >,
+				< 1804800 MHZ_TO_MBPS(2092, 8) >;
 		};
 	};
 
@@ -3418,11 +3420,11 @@
 			qcom,cachemiss-ev = <0x17>;
 			qcom,stall-cycle-ev = <0x24>;
 			qcom,core-dev-table =
-				< 1056000 MHZ_TO_MBPS( 547, 8) >,
-				< 1344000 MHZ_TO_MBPS(1017, 8) >,
-				< 1766400 MHZ_TO_MBPS(1555, 8) >,
-				< 2208000 MHZ_TO_MBPS(1804, 8) >,
-				< 2803200 MHZ_TO_MBPS(2092, 8) >;
+				< 1056000 MHZ_TO_MBPS(1017, 8) >,
+				< 1344000 MHZ_TO_MBPS(1555, 8) >,
+				< 1766400 MHZ_TO_MBPS(2092, 8) >,
+				< 2208000 MHZ_TO_MBPS(2400, 8) >,
+				< 2803200 MHZ_TO_MBPS(2400, 8) >;
 		};
 
 		cpu4_computemon: qcom,cpu4-computemon {
@@ -3430,11 +3432,11 @@
 			qcom,cpulist = <&CPU4 &CPU5 &CPU6 &CPU7>;
 			qcom,target-dev = <&cpu4_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
-				< 1056000 MHZ_TO_MBPS( 547, 8) >,
-				< 1344000 MHZ_TO_MBPS( 768, 8) >,
-				< 1766400 MHZ_TO_MBPS(1017, 8) >,
-				< 2208000 MHZ_TO_MBPS(1804, 8) >,
-				< 2803200 MHZ_TO_MBPS(2092, 8) >;
+				< 1056000 MHZ_TO_MBPS(1017, 8) >,
+				< 1344000 MHZ_TO_MBPS(1555, 8) >,
+				< 1766400 MHZ_TO_MBPS(2092, 8) >,
+				< 2208000 MHZ_TO_MBPS(2400, 8) >,
+				< 2803200 MHZ_TO_MBPS(2400, 8) >;
 		};
 	};
 
@@ -3893,6 +3895,7 @@ tpdm_turing_llm: tpdm@8861000 {
 		BW_OPP_ENTRY(1555, 8); /*11863 MB/s */
 		BW_OPP_ENTRY(1804, 8); /*13763 MB/s */
 		BW_OPP_ENTRY(2092, 8); /*15960 MB/s */
+		BW_OPP_ENTRY(2400, 8); /* OVERCLOCK */
 	};
 
 	gpubw: qcom,gpubw {
@@ -3905,8 +3908,8 @@ tpdm_turing_llm: tpdm@8861000 {
 	gpu_opp_table: gpu-opp-table {
 		compatible = "operating-points-v2";
 
-		opp-1114800000 {
-			opp-hz = /bits/ 64 <1114800000>;
+		opp-1127800000 {
+			opp-hz = /bits/ 64 <1127800000>; /* OVERCLOCK */
 			opp-microvolt = <RPMH_REGULATOR_LEVEL_TURBO_L1>;
 		};
 
@@ -3948,7 +3951,8 @@ tpdm_turing_llm: tpdm@8861000 {
 		<26 512 0 8136000>,   /*  4 bus=1017 (SVS_L1)  */
 		<26 512 0 12440000>,  /*  5 bus=1555 (NOM)     */
 		<26 512 0 14432000>,  /*  6 bus=1804 (TURBO)   */
-		<26 512 0 16736000>;  /*  7 bus=2092 (TURBO_L1)   */
+		<26 512 0 16736000>,  /*  7 bus=2092 (TURBO_L1)   */
+		<26 512 0 19200000>;  /*  8 bus=2400 OVERCLOCK   */
 
 	/delete-node/ qcom,gpu-pwrlevel-bins;
 	/*
@@ -3976,10 +3980,10 @@ tpdm_turing_llm: tpdm@8861000 {
 			/* TURBO_L1 */
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
-				qcom,gpu-freq = <1260000000>;
-				qcom,bus-freq = <7>;
+				qcom,gpu-freq = <1127800000>; /* OVERCLOCK */
+				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
-				qcom,bus-max = <7>;
+				qcom,bus-max = <8>;
 			};
 
 			/* TURBO_L1 */
@@ -4059,9 +4063,9 @@ tpdm_turing_llm: tpdm@8861000 {
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
 				qcom,gpu-freq = <1114800000>;
-				qcom,bus-freq = <7>;
+				qcom,bus-freq = <8>;
 				qcom,bus-min = <7>;
-				qcom,bus-max = <7>;
+				qcom,bus-max = <8>;
 			};
 
 			/* TURBO */
@@ -4183,7 +4187,6 @@ tpdm_turing_llm: tpdm@8861000 {
 			};
 		};
 	};
-};
 
 &qupv3_se1_i2c {
 	status = "ok";
