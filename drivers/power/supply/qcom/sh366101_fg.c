@@ -192,7 +192,7 @@ static int __fg_read_word(struct i2c_client* client, u8 reg, u16* val)
 
 	ret = i2c_smbus_read_word_data(client, reg); /* little endian */
 	if (ret < 0) {
-		pr_err("i2c read word fail: can't read from reg 0x%02X\n", reg);
+		pr_debug("i2c read word fail: can't read from reg 0x%02X\n", reg);
 		return ret;
 	}
 	*val = (u16)ret;
@@ -206,7 +206,7 @@ static int __fg_write_word(struct i2c_client* client, u8 reg, u16 val)
 
 	ret = i2c_smbus_write_word_data(client, reg, val); /* little endian */
 	if (ret < 0) {
-		pr_err("i2c write word fail: can't write 0x%02X to reg 0x%02X\n", val, reg);
+		pr_debug("i2c write word fail: can't write 0x%02X to reg 0x%02X\n", val, reg);
 		return ret;
 	}
 
@@ -217,7 +217,7 @@ static int fg_read_sbs_word(struct sh_fg_chip* sm, u32 reg, u16* val)
 {
 	int ret = -1;
 
-	pr_info("fg_read_sbs_word start, reg=%08X", reg);
+	pr_debug("fg_read_sbs_word start, reg=%08X", reg);
 	/* 
 	if (sm->skip_reads) {
 		*val = 0;
@@ -365,7 +365,7 @@ static s32 __fg_write_buffer(struct i2c_client* client, u8 reg, u8 length, u8* v
 		return -ENODEV;
 
 	if ((length <= 0) || (length + 1 >= WRITE_BUF_MAX_LEN)) {
-		pr_err("i2c write buffer fail: length invalid!");
+		pr_debug("i2c write buffer fail: length invalid!");
 		return -1;
 	}
 
@@ -380,7 +380,7 @@ static s32 __fg_write_buffer(struct i2c_client* client, u8 reg, u8 length, u8* v
 
 	ret = i2c_transfer(client->adapter, msg, ARRAY_SIZE(msg));
 	if (ret < 0) {
-		pr_err("i2c write buffer fail: can't write reg 0x%02X\n", reg);
+		pr_debug("i2c write buffer fail: can't write reg 0x%02X\n", reg);
 		return (s32)ret;
 	}
 
@@ -451,7 +451,7 @@ static s32 fg_decode_iic_write(struct sh_fg_chip* sm, struct sh_decoder* decoder
 		return -ENODEV;
 
 	if ((length <= 0) || (length + 1 >= WRITE_BUF_MAX_LEN)) {
-		pr_err("i2c write buffer fail: length invalid!");
+		pr_debug("i2c write buffer fail: length invalid!");
 		return -1;
 	}
 
@@ -467,12 +467,12 @@ static s32 fg_decode_iic_write(struct sh_fg_chip* sm, struct sh_decoder* decoder
 
 	ret = i2c_transfer(sm->client->adapter, msg, ARRAY_SIZE(msg));
 	if (ret < 0) {
-		pr_err("i2c write buffer fail: can't write reg 0x%02X\n", decoder->reg);
+		pr_debug("i2c write buffer fail: can't write reg 0x%02X\n", decoder->reg);
 	}
 
 	mutex_unlock(&sm->i2c_rw_lock);
 	if (ret < 0) {
-		pr_err("i2c write buffer fail: can't write reg 0x%02X\n", decoder->reg);
+		pr_debug("i2c write buffer fail: can't write reg 0x%02X\n", decoder->reg);
 	}
 
 	mutex_unlock(&sm->i2c_rw_lock);
@@ -493,7 +493,7 @@ static int fg_read_status(struct sh_fg_chip* sm)
 	if (ret < 0)
 		return ret;
 
-	pr_err("cntl=0x%04X, bat_flags=0x%04X", cntl, flags1);
+	pr_debug("cntl=0x%04X, bat_flags=0x%04X", cntl, flags1);
 	mutex_lock(&sm->data_lock);
 	sm->batt_present = !!(flags1 & FG_STATUS_BATT_PRESENT);
 	sm->batt_ot = !!(flags1 & FG_STATUS_HIGH_TEMPERATURE);
@@ -523,7 +523,7 @@ static irqreturn_t fg_irq_thread(int irq, void* dev_id)
 	struct sh_fg_chip* sm = dev_id;
 
 	fg_status_changed(sm);
-	pr_info("fg_read_int");
+	pr_debug("fg_read_int");
 
 	return 0;
 }
@@ -552,7 +552,7 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	/* Cali Info */
 	ret = fg_read_block(sm, CMD_CALIINFO, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read CALIINFO, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read CALIINFO, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -564,12 +564,12 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	i += sprintf(&str[i], "TS1Temp=%d, ", (s16)(BUF2U16_LT(&buf[22]) - TEMPER_OFFSET));
 	i += sprintf(&str[i], "IntTemper=%d, ", (s16)(BUF2U16_LT(&buf[18]) - TEMPER_OFFSET));
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: CMD_CALIINFO is %s", str);
+	pr_debug("SH366101_GaugeLog: CMD_CALIINFO is %s", str);
 
 	/* Gauge Info */
 	ret = fg_read_block(sm, CMD_GAUGEINFO, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read GAUGEINFO, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read GAUGEINFO, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -591,12 +591,12 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	i += sprintf(&str[i], "LTFlag=0x%02X, ", buf[22]);
 	i += sprintf(&str[i], "RSTS=0x%02X, ", buf[23]);
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: CMD_GAUGEINFO is %s", str);
+	pr_debug("SH366101_GaugeLog: CMD_GAUGEINFO is %s", str);
 
 	/* Gauge Block 2 */
 	ret = fg_read_block(sm, CMD_GAUGEBLOCK2, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK2, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK2, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -620,12 +620,12 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	i += sprintf(&str[i], "RelaxCycle=%d, ", BUF2U16_BG(&buf[28]));
 	i += sprintf(&str[i], "RatioCycle=%d, ", BUF2U16_BG(&buf[30]));
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: GAUGEBLOCK2 is %s", str);
+	pr_debug("SH366101_GaugeLog: GAUGEBLOCK2 is %s", str);
 
 	/* Gauge Block 3 */
 	ret = fg_read_block(sm, CMD_GAUGEBLOCK3, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK3, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK3, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -648,12 +648,12 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	i += sprintf(&str[i], "OCVTim=%d, ", BUF2U16_BG(&buf[28]));
 	i += sprintf(&str[i], "RaCalT1=%d, ", BUF2U16_BG(&buf[30]));
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: GAUGEBLOCK3 is %s", str);
+	pr_debug("SH366101_GaugeLog: GAUGEBLOCK3 is %s", str);
 
 	/* Gauge Block 4 */
 	ret = fg_read_block(sm, CMD_GAUGEBLOCK4, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK4, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK4, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -676,12 +676,12 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	i += sprintf(&str[i], "RERaw=%d, ", (s16)BUF2U16_BG(&buf[28]));
 	i += sprintf(&str[i], "FCERaw=%d, ", (s16)BUF2U16_BG(&buf[30]));
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: GAUGEBLOCK4 is %s", str);
+	pr_debug("SH366101_GaugeLog: GAUGEBLOCK4 is %s", str);
 
 	/* Gauge Block 5 */
 	ret = fg_read_block(sm, CMD_GAUGEBLOCK5, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK5, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK5, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -706,12 +706,12 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	i += sprintf(&str[i], "EquRE=%d, ", (s16)BUF2U16_BG(&buf[28]));
 	i += sprintf(&str[i], "EquFCE=%d, ", (s16)BUF2U16_BG(&buf[30]));
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: GAUGEBLOCK5 is %s", str);
+	pr_debug("SH366101_GaugeLog: GAUGEBLOCK5 is %s", str);
 
 	/* Gauge Block 6 */
 	ret = fg_read_block(sm, CMD_GAUGEBLOCK6, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK6, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK6, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -739,12 +739,12 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 	i += sprintf(&str[i], "FGPrid=%d, ", (s16)BUF2U16_BG(&buf[28]));
 	i += sprintf(&str[i], "FastTime=%d, ", (s16)BUF2U16_BG(&buf[30]));
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: GAUGEBLOCK6 is %s", str);
+	pr_debug("SH366101_GaugeLog: GAUGEBLOCK6 is %s", str);
 
 	/* Gauge Fusion Model */
 	ret = fg_read_block(sm, CMD_GAUGEBLOCK_FG, GAUGEINFO_LEN, buf);
 	if (ret < 0) {
-		pr_err("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK_FG, ret = %d\n", ret);
+		pr_debug("SH366101_GaugeLog: could not read CMD_GAUGEBLOCK_FG, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -755,8 +755,8 @@ static s32 fg_read_gaugeinfo_block(struct sh_fg_chip* sm)
 		i += sprintf(&str[i], "0x%04X ", BUF2U16_BG(&buf[ret * 2]));
 
 	j = max(i, j);
-	pr_err("SH366101_GaugeLog: FusionModel is %s", str);
-	pr_err("SH366101_GaugeLog: max len=%d", j);
+	pr_debug("SH366101_GaugeLog: FusionModel is %s", str);
+	pr_debug("SH366101_GaugeLog: max len=%d", j);
 
 	ret = 0;
 
@@ -772,11 +772,11 @@ static s32 fg_read_soc(struct sh_fg_chip* sm)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_SOC], &data);
 	if (ret < 0) {
-		pr_err("could not read SOC, ret = %d\n", ret);
+		pr_debug("could not read SOC, ret = %d\n", ret);
 		return ret;
 	} else {
 		soc = (s32)data;
-		pr_info("fg_read_soc soc=%d\n", soc);
+		pr_debug("fg_read_soc soc=%d\n", soc);
 		return soc;
 	}
 }
@@ -789,7 +789,7 @@ static u32 fg_read_ocv(struct sh_fg_chip* sm)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_OCV], &data);
 	if (ret < 0) {
-		pr_err("could not read OCV, ret = %d\n", ret);
+		pr_debug("could not read OCV, ret = %d\n", ret);
 		ocv = 4000 * MA_TO_UA;
 	} else {
 		ocv = data * MA_TO_UA;
@@ -814,11 +814,11 @@ static s32 fg_read_temperature(struct sh_fg_chip* sm, enum sh_fg_temperature_typ
 
 	ret = fg_read_sbs_word(sm, temp, &data);
 	if (ret < 0) {
-		pr_err("could not read temperature, ret = %d\n", ret);
+		pr_debug("could not read temperature, ret = %d\n", ret);
 		return ret;
 	} else {
 		temp = (s32)data - 2731;
-		pr_info("fg_read_temperature temp=%d\n", temp);
+		pr_debug("fg_read_temperature temp=%d\n", temp);
 		return temp;
 	}
 }
@@ -831,7 +831,7 @@ static s32 fg_read_volt(struct sh_fg_chip* sm)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_VOLTAGE], &data);
 	if (ret < 0) {
-		pr_err("could not read voltage, ret = %d\n", ret);
+		pr_debug("could not read voltage, ret = %d\n", ret);
 		return ret;
 	} else {
 		volt = (s32)data * MA_TO_UA;
@@ -848,7 +848,7 @@ static s32 fg_get_cycle(struct sh_fg_chip* sm)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_SOC_CYCLE], &data);
 	if (ret < 0) {
-		pr_err("read cycle reg fail ret = %d\n", ret);
+		pr_debug("read cycle reg fail ret = %d\n", ret);
 		data = 0;
 	}
 
@@ -862,7 +862,7 @@ static s32 fg_read_current(struct sh_fg_chip* sm)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_CURRENT], &data);
 	if (ret < 0) {
-		pr_err("could not read current, ret = %d\n", ret);
+		pr_debug("could not read current, ret = %d\n", ret);
 		return ret;
 	}
 
@@ -876,7 +876,7 @@ static s32 fg_read_fcc(struct sh_fg_chip* sm)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_BAT_FCC], &data);
 	if (ret < 0) {
-		pr_err("could not read FCC, ret=%d\n", ret);
+		pr_debug("could not read FCC, ret=%d\n", ret);
 		return ret;
 	}
 
@@ -890,7 +890,7 @@ static s32 fg_read_rmc(struct sh_fg_chip* sm)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_BAT_RMC], &data);
 	if (ret < 0) {
-		pr_err("could not read RMC, ret=%d\n", ret);
+		pr_debug("could not read RMC, ret=%d\n", ret);
 		return ret;
 	}
 
@@ -911,14 +911,14 @@ static s32 get_battery_status(struct sh_fg_chip* sm)
 		/* if battery has been registered, use the status property */
 		rc = power_supply_get_property(sm->batt_psy, POWER_SUPPLY_PROP_STATUS, &ret);
 		if (rc) {
-			pr_err("Battery does not export status: %d\n", rc);
+			pr_debug("Battery does not export status: %d\n", rc);
 			return POWER_SUPPLY_STATUS_UNKNOWN;
 		}
 		return ret.intval;
 	}
 
 	/* Default to false if the battery power supply is not registered. */
-	pr_err("battery power supply is not registered\n");
+	pr_debug("battery power supply is not registered\n");
 	return POWER_SUPPLY_STATUS_UNKNOWN;
 }
 
@@ -1018,7 +1018,7 @@ static s32 fg_get_property(struct power_supply* psy, enum power_supply_property 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
 		val->intval = fg_get_batt_status(sm);
-		/* pr_info("fg POWER_SUPPLY_PROP_STATUS:%d\n", val->intval); */
+		/* pr_debug("fg POWER_SUPPLY_PROP_STATUS:%d\n", val->intval); */
 		break;
 
 	case POWER_SUPPLY_PROP_SHUTDOWN_DELAY:
@@ -1204,7 +1204,7 @@ static s32 fg_psy_register(struct sh_fg_chip* sm)
 
 	sm->fg_psy = devm_power_supply_register(sm->dev, &sm->fg_psy_d, &fg_psy_cfg);
 	if (IS_ERR(sm->fg_psy)) {
-		pr_err("Failed to register fg_psy");
+		pr_debug("Failed to register fg_psy");
 		return PTR_ERR(sm->fg_psy);
 	}
 
@@ -1276,12 +1276,12 @@ static void fg_refresh_status(struct sh_fg_chip* sm)
 	static s32 last_soc, last_temp;
 
 	fg_read_status(sm);
-	pr_err("batt_present=%d", sm->batt_present);
+	pr_debug("batt_present=%d", sm->batt_present);
 
 	if (!last_batt_inserted && sm->batt_present) { /* battery inserted */
-		pr_err("Battery inserted\n");
+		pr_debug("Battery inserted\n");
 	} else if (last_batt_inserted && !sm->batt_present) { /* battery removed */
-		pr_err("Battery removed\n");
+		pr_debug("Battery removed\n");
 		sm->batt_soc = -ENODATA;
 		sm->batt_fcc = -ENODATA;
 		sm->batt_volt = -ENODATA;
@@ -1310,8 +1310,8 @@ static void fg_refresh_status(struct sh_fg_chip* sm)
 		fg_cal_carc(sm);
 #endif
 
-		pr_err("RSOC:%d, Volt:%d, Current:%d, Temperature:%d\n", sm->batt_soc, sm->batt_volt, sm->batt_curr, sm->batt_temp);
-		pr_err("RM:%d,FC:%d,FAST:%d", sm->batt_rmc, sm->batt_fcc, sm->fast_mode);
+		pr_debug("RSOC:%d, Volt:%d, Current:%d, Temperature:%d\n", sm->batt_soc, sm->batt_volt, sm->batt_curr, sm->batt_temp);
+		pr_debug("RM:%d,FC:%d,FAST:%d", sm->batt_rmc, sm->batt_fcc, sm->fast_mode);
 
 		if ((last_soc != sm->batt_soc) || (last_temp != sm->batt_temp)) {
 			if (sm->fg_psy)
@@ -1366,7 +1366,7 @@ static s32 fg_check_full_status(struct sh_fg_chip *sm)
 	}
 	full_volt = get_effective_result(sm->fv_votable) / 1000 - 20;
 
-	pr_info("term:%d, full_volt:%d, usb_present:%d, batt_sw_fc:%d", term_curr, full_volt, sm->usb_present, sm->batt_sw_fc);
+	pr_debug("term:%d, full_volt:%d, usb_present:%d, batt_sw_fc:%d", term_curr, full_volt, sm->usb_present, sm->batt_sw_fc);
 
 	if (sm->usb_present 
 	&& (sm->batt_soc == SM_RAW_SOC_FULL) 
@@ -1375,11 +1375,11 @@ static s32 fg_check_full_status(struct sh_fg_chip *sm)
 	&& (sm->batt_curr > term_curr * (-1)) 
 	&& (!sm->batt_sw_fc)) {
 		full_check++;
-		pr_err("full_check:%d\n", full_check);
+		pr_debug("full_check:%d\n", full_check);
 		if (full_check > BAT_FULL_CHECK_TIME) {
 			sm->batt_sw_fc = true;
 			vote(sm->chg_dis_votable, BMS_FC_VOTER, true, 0);
-			pr_err("detect charge termination sm->batt_sw_fc:%d\n", sm->batt_sw_fc);
+			pr_debug("detect charge termination sm->batt_sw_fc:%d\n", sm->batt_sw_fc);
 		}
 		return MONITOR_WORK_1S;
 	} else {
@@ -1418,7 +1418,7 @@ static s32 fg_check_recharge_status(struct sh_fg_chip *sm)
 		vote(sm->chg_dis_votable, BMS_FC_VOTER, false, 0);
 		rc = power_supply_get_property(sm->batt_psy, POWER_SUPPLY_PROP_FORCE_RECHARGE, &prop);		
 		if (rc < 0) {
-			pr_err("sm could not set force recharging!\n");
+			pr_debug("sm could not set force recharging!\n");
 			return rc;
 		}
 	}
@@ -1452,11 +1452,11 @@ static s32 fg_get_device_id(struct i2c_client* client)
 
 	ret = fg_read_sbs_word(sm, sm->regs[SH_FG_REG_DEVICE_ID], &data);
 	if (ret < 0) {
-		pr_err("Failed to read DEVICE_ID, ret = %d\n", ret);
+		pr_debug("Failed to read DEVICE_ID, ret = %d\n", ret);
 		return ret;
 	}
 
-	pr_info("device_id = 0x%04X\n", data);
+	pr_debug("device_id = 0x%04X\n", data);
 	return ret;
 }
 
@@ -1467,7 +1467,7 @@ static bool fg_init(struct i2c_client* client)
 	/*sh366101 i2c read check*/
 	ret = fg_get_device_id(client);
 	if (ret < 0) {
-		pr_err("%s: fail to do i2c read(%d)\n", __func__, ret);
+		pr_debug("%s: fail to do i2c read(%d)\n", __func__, ret);
 		return false;
 	}
 
@@ -1483,10 +1483,10 @@ static s32 fg_common_parse_dt(struct sh_fg_chip* sm)
 	BUG_ON(np == 0);
 
 	sm->gpio_int = of_get_named_gpio(np, "qcom,irq-gpio", 0);
-	pr_info("gpio_int=%d\n", sm->gpio_int);
+	pr_debug("gpio_int=%d\n", sm->gpio_int);
 
 	if (!gpio_is_valid(sm->gpio_int)) {
-		pr_info("gpio_int is not valid\n");
+		pr_debug("gpio_int is not valid\n");
 		sm->gpio_int = -EINVAL;
 	}
 
@@ -1495,20 +1495,20 @@ static s32 fg_common_parse_dt(struct sh_fg_chip* sm)
 		sm->en_temp_ex = true;
 	else
 		sm->en_temp_ex = 0;
-	pr_info("Temperature EX enabled = %d\n", sm->en_temp_ex);
+	pr_debug("Temperature EX enabled = %d\n", sm->en_temp_ex);
 
 	if (of_property_read_bool(np, "sm,en_temp_in"))
 		sm->en_temp_in = true;
 	else
 		sm->en_temp_in = 0;
-	pr_info("Temperature IN enabled = %d\n", sm->en_temp_in);
+	pr_debug("Temperature IN enabled = %d\n", sm->en_temp_in);
 
 	/* EN BATT DET  */
 	if (of_property_read_bool(np, "sm,en_batt_det"))
 		sm->en_batt_det = true;
 	else
 		sm->en_batt_det = 0;
-	pr_info("Batt Det enabled = %d\n", sm->en_batt_det);
+	pr_debug("Batt Det enabled = %d\n", sm->en_batt_det);
 	/* Shutdown feature */
         if (of_property_read_bool(np,"sm,shutdown-delay-enable"))
 		sm->shutdown_delay_enable = true;
@@ -1538,7 +1538,7 @@ static s32 Check_Chip_Version(struct sh_fg_chip* sm)
 	/* battery_params node*/
 	np = of_find_node_by_name(of_node_get(np), "battery_params");
 	if (np == NULL) {
-		pr_err("Check_Chip_Version: Cannot find child node \"battery_params\"\n");
+		pr_debug("Check_Chip_Version: Cannot find child node \"battery_params\"\n");
 		return CHECK_VERSION_ERR;
 	}
 
@@ -1548,13 +1548,13 @@ static s32 Check_Chip_Version(struct sh_fg_chip* sm)
 	of_property_read_u32(np, "version_ts", &version_ts);
 	of_property_read_u8(np, "iap_twiadr", &decoder.addr); /* 20211025, Ethan */
 
-	pr_err("Check_Chip_Version: main=0x%04X, date=0x%08X, afi=0x%04X, ts=0x%04X", version_main, version_date, version_afi, version_ts);
+	pr_debug("Check_Chip_Version: main=0x%04X, date=0x%08X, afi=0x%04X, ts=0x%04X", version_main, version_date, version_afi, version_ts);
 
 	/* 20211025, Ethan. IAP Fail Check. iap addr may differ from normal addr */
 	decoder.reg = (u8)CMD_IAPSTATE_CHECK;
 	decoder.length = IAP_READ_LEN;
 	if ((fg_decode_iic_read(sm, &decoder, iap_read) >= 0) && (iap_read[0] != 0) && (iap_read[1] != 0)) {
-		pr_err("Check_Chip_Version: ic is in iap mode, force update all");
+		pr_debug("Check_Chip_Version: ic is in iap mode, force update all");
 		ret = CHECK_VERSION_FW | CHECK_VERSION_AFI | CHECK_VERSION_TS;
 		goto Check_Chip_Version_End;
 	}
@@ -1578,7 +1578,7 @@ static s32 Check_Chip_Version(struct sh_fg_chip* sm)
 		ret = CHECK_VERSION_ERR;
 		goto Check_Chip_Version_End;
 	}
-	pr_err(" Chip_Version: ic main=0x%04X ", temp);
+	pr_debug(" Chip_Version: ic main=0x%04X ", temp);
 
 	if (temp < version_main) {
 		ret = CHECK_VERSION_FW | CHECK_VERSION_AFI | CHECK_VERSION_TS;
@@ -1598,7 +1598,7 @@ static s32 Check_Chip_Version(struct sh_fg_chip* sm)
 			goto Check_Chip_Version_End;
 		}
 		date |= (temp & FW_DATE_MASK);
-		pr_err(" Chip_Version: ic date=0x%08X ", date);
+		pr_debug(" Chip_Version: ic date=0x%08X ", date);
 		if (date < version_date) {
 			ret = CHECK_VERSION_FW | CHECK_VERSION_AFI | CHECK_VERSION_TS;
 			goto Check_Chip_Version_End;
@@ -1611,7 +1611,7 @@ static s32 Check_Chip_Version(struct sh_fg_chip* sm)
 		ret = CHECK_VERSION_ERR;
 		goto Check_Chip_Version_End;
 	}
-	pr_err(" Chip_Version: ic afi=0x%04X ", temp);
+	pr_debug(" Chip_Version: ic afi=0x%04X ", temp);
 	if (temp != version_afi)
 		ret |= CHECK_VERSION_AFI;
 
@@ -1620,7 +1620,7 @@ static s32 Check_Chip_Version(struct sh_fg_chip* sm)
 		ret = CHECK_VERSION_ERR;
 		goto Check_Chip_Version_End;
 	}
-	pr_err(" Chip_Version: ic ts=0x%04X ", temp);
+	pr_debug(" Chip_Version: ic ts=0x%04X ", temp);
 	if (temp != version_ts)
 		ret |= CHECK_VERSION_TS;
 
@@ -1643,34 +1643,34 @@ int file_decode_process(struct sh_fg_chip* sm, char* profile_name)
 	int result = -1;
 	int retry;
 
-	pr_err("file_decode_process: start");
+	pr_debug("file_decode_process: start");
 
 	/* battery_params node*/
 	np = of_find_node_by_name(of_node_get(np), "battery_params");
 	if (np == NULL) {
-		pr_err("file_decode_process: Cannot find child node \"battery_params\"");
+		pr_debug("file_decode_process: Cannot find child node \"battery_params\"");
 		return -EINVAL;
 	}
 
 	buflen = of_property_count_u8_elems(np, profile_name);
-	pr_err("file_decode_process: ele_len=%d, key=%s", buflen, profile_name);
+	pr_debug("file_decode_process: ele_len=%d, key=%s", buflen, profile_name);
 
 	pBuf = (u8*)devm_kzalloc(dev, buflen, 0);
 	pBuf_Read = (u8*)devm_kzalloc(dev, BUF_MAX_LENGTH, 0);
 
 	if ((pBuf == NULL) || (pBuf_Read == NULL)) {
 		result = ERRORTYPE_ALLOC;
-		pr_err("file_decode_process: kzalloc error");
+		pr_debug("file_decode_process: kzalloc error");
 		goto main_process_error;
 	}
 
 	result = of_property_read_u8_array(np, profile_name, pBuf, buflen);
 	if (result) {
-		pr_err("file_decode_process: read dts fail %s\n", profile_name);
+		pr_debug("file_decode_process: read dts fail %s\n", profile_name);
 		goto main_process_error;
 	}
 	print_buffer(strDebug, sizeof(char) * FILEDECODE_STRLEN, pBuf, 32);
-	pr_err("file_decode_process: first data=%s", strDebug);
+	pr_debug("file_decode_process: first data=%s", strDebug);
 
 	i = 0;
 	j = 0;
@@ -1685,7 +1685,7 @@ int file_decode_process(struct sh_fg_chip* sm, char* profile_name)
 				i += LINELEN_WAIT;
 			} else {
 				print_buffer(strDebug, sizeof(char) * FILEDECODE_STRLEN, &pBuf[i + INDEX_TYPE], 32);
-				pr_err("file_decode_process wait error! index=%d, str=%s", i, strDebug);
+				pr_debug("file_decode_process wait error! index=%d, str=%s", i, strDebug);
 				result = ERRORTYPE_LINE;
 				goto main_process_error;
 			}
@@ -1700,7 +1700,7 @@ int file_decode_process(struct sh_fg_chip* sm, char* profile_name)
 			/*if (fg_read_block(sm, pBuf[i + INDEX_REG], line_length, pBuf_Read) < 0) { */
 			if (fg_decode_iic_read(sm, (struct sh_decoder*)&pBuf[i + INDEX_ADDR], pBuf_Read) < 0) {
 				print_buffer(strDebug, sizeof(char) * FILEDECODE_STRLEN, &pBuf[i + INDEX_TYPE], 32);
-				pr_err("file_decode_process read error! index=%d, str=%s", i, strDebug);
+				pr_debug("file_decode_process read error! index=%d, str=%s", i, strDebug);
 				result = ERRORTYPE_COMM;
 				goto main_process_error;
 			}
@@ -1718,7 +1718,7 @@ int file_decode_process(struct sh_fg_chip* sm, char* profile_name)
 				/*if (fg_read_block(sm, pBuf[i + INDEX_REG], line_length, pBuf_Read) < 0) { */
 				if (fg_decode_iic_read(sm, (struct sh_decoder*)&pBuf[i + INDEX_ADDR], pBuf_Read) < 0) {
 					print_buffer(strDebug, sizeof(char) * FILEDECODE_STRLEN, &pBuf[i + INDEX_TYPE], 32);
-					pr_err("file_decode_process compare_read error! index=%d, str=%s", i, strDebug);
+					pr_debug("file_decode_process compare_read error! index=%d, str=%s", i, strDebug);
 					result = ERRORTYPE_COMM;
 					goto file_decode_process_compare_loop_end;
 				}
@@ -1740,9 +1740,9 @@ int file_decode_process(struct sh_fg_chip* sm, char* profile_name)
 					break;
 
 				print_buffer(strDebug, sizeof(char) * FILEDECODE_STRLEN, &pBuf[i + INDEX_TYPE], 32);
-				pr_err("file_decode_process compare error! index=%d, retry=%d, host=%s", i, retry, strDebug);
+				pr_debug("file_decode_process compare error! index=%d, retry=%d, host=%s", i, retry, strDebug);
 				print_buffer(strDebug, sizeof(char) * FILEDECODE_STRLEN, pBuf_Read, 32);
-				pr_err("ic=%s", i, strDebug);
+				pr_debug("ic=%s", i, strDebug);
 
 			file_decode_process_compare_loop_end:
 				HOST_DELAY(COMPARE_RETRY_WAIT); /* 20211029, Ethan */
@@ -1763,7 +1763,7 @@ int file_decode_process(struct sh_fg_chip* sm, char* profile_name)
 			/* if (fg_write_block(sm, pBuf[i + INDEX_REG], line_length, &pBuf[i + INDEX_DATA]) != 0) { */
 			if (fg_decode_iic_write(sm, (struct sh_decoder*)&pBuf[i + INDEX_ADDR]) != 0) {
 				print_buffer(strDebug, sizeof(char) * FILEDECODE_STRLEN, &pBuf[i + INDEX_TYPE], 32);
-				pr_err("file_decode_process write error! index=%d, str=%s", i, strDebug);
+				pr_debug("file_decode_process write error! index=%d, str=%s", i, strDebug);
 				result = ERRORTYPE_COMM;
 				goto main_process_error;
 			}
@@ -1777,7 +1777,7 @@ int file_decode_process(struct sh_fg_chip* sm, char* profile_name)
 	result = ERRORTYPE_NONE;
 
 main_process_error:
-	pr_err("file_decode_process end: result=%d", result);
+	pr_debug("file_decode_process end: result=%d", result);
 	return result;
 }
 
@@ -1793,15 +1793,15 @@ static s32 fg_battery_parse_dt(struct sh_fg_chip* sm)
 	/* battery_params node*/
 	np = of_find_node_by_name(of_node_get(np), "battery_params");
 	if (np == NULL) {
-		pr_info("Cannot find child node \"battery_params\"\n");
+		pr_debug("Cannot find child node \"battery_params\"\n");
 		return -EINVAL;
 	}
 
 	if (of_property_read_u32(np, "battery,id", &battery_id) < 0)
-		pr_err("not battery,id property\n");
+		pr_debug("not battery,id property\n");
 	if (battery_id == -1)
 		battery_id = get_battery_id(sm);
-	pr_info("battery id = %d\n", battery_id);
+	pr_debug("battery id = %d\n", battery_id);
 
 	return 0;
 }
@@ -1810,7 +1810,7 @@ bool hal_fg_init(struct i2c_client* client)
 {
 	struct sh_fg_chip* sm = i2c_get_clientdata(client);
 
-	pr_info("sh366101 hal_fg_init...\n");
+	pr_debug("sh366101 hal_fg_init...\n");
 	mutex_lock(&sm->data_lock);
 	if (client->dev.of_node) {
 		/* Load common data from DTS*/
@@ -1825,7 +1825,7 @@ bool hal_fg_init(struct i2c_client* client)
 		return false;
 
 	mutex_unlock(&sm->data_lock);
-	pr_info("hal fg init OK\n");
+	pr_debug("hal fg init OK\n");
 	return true;
 }
 
@@ -1837,13 +1837,13 @@ static s32 sh366101_get_psy(struct sh_fg_chip* sm)
 
 	sm->usb_psy = power_supply_get_by_name("usb");
 	if (!sm->usb_psy) {
-		pr_err("USB supply not found, defer probe\n");
+		pr_debug("USB supply not found, defer probe\n");
 		return -EINVAL;
 	}
 
 	sm->batt_psy = power_supply_get_by_name("battery");
 	if (!sm->batt_psy) {
-		pr_err("bms supply not found, defer probe\n");
+		pr_debug("bms supply not found, defer probe\n");
 		return -EINVAL;
 	}
 #endif
@@ -1875,7 +1875,7 @@ static s32 sh366101_notifier_call(struct notifier_block* nb, unsigned long ev, v
 		rc = power_supply_get_property(sm->usb_psy, POWER_SUPPLY_PROP_PRESENT, &pval);
 
 		if (rc < 0) {
-			pr_err("failed get usb present\n");
+			pr_debug("failed get usb present\n");
 			return -EINVAL;
 		}
 		if (pval.intval) {
@@ -1898,9 +1898,9 @@ static s32 sh_fg_probe(struct i2c_client* client, const struct i2c_device_id* id
 	s32 retry;
 	struct sh_fg_chip* sm;
 	u32* regs;
-	pr_err("2021.09.10 wsy %s: start\n", __func__);
+	pr_debug("2021.09.10 wsy %s: start\n", __func__);
 
-	pr_info("enter\n");
+	pr_debug("enter\n");
 	sm = devm_kzalloc(&client->dev, sizeof(*sm), GFP_KERNEL);
 
 	if (!sm)
@@ -1921,7 +1921,7 @@ static s32 sh_fg_probe(struct i2c_client* client, const struct i2c_device_id* id
 	if (sm->chip == SH366101) {
 		regs = sh366101_regs;
 	} else {
-		pr_err("unexpected fuel gauge: %d\n", sm->chip);
+		pr_debug("unexpected fuel gauge: %d\n", sm->chip);
 		regs = sh366101_regs;
 	}
 
@@ -1935,48 +1935,48 @@ static s32 sh_fg_probe(struct i2c_client* client, const struct i2c_device_id* id
 	/* 20211013, Ethan. Firmware Update */
 	version_ret = Check_Chip_Version(sm);
 	if (version_ret == CHECK_VERSION_ERR) {
-		pr_err("Probe: Check version error!");
+		pr_debug("Probe: Check version error!");
 	} else if (version_ret == CHECK_VERSION_OK) {
-		pr_err("Probe: Check version ok!");
+		pr_debug("Probe: Check version ok!");
 	} else {
-		pr_err("Probe: Check version update: %X", version_ret);
+		pr_debug("Probe: Check version update: %X", version_ret);
 
 		if (version_ret & CHECK_VERSION_FW) {
-			pr_err("Probe: Firmware Update start");
+			pr_debug("Probe: Firmware Update start");
 			for (retry = 0; retry < FILE_DECODE_RETRY; retry++) {
 				ret = file_decode_process(sm, "sinofs_image_data");
 				if (ret == ERRORTYPE_NONE)
 					break;
 				HOST_DELAY(FILE_DECODE_DELAY); /* 20211029, Ethan */
 			}
-			pr_err("Probe: Firmware Update end, ret=%d", ret);
+			pr_debug("Probe: Firmware Update end, ret=%d", ret);
 		}
 
 		if (version_ret & CHECK_VERSION_TS) {
-			pr_err("Probe: TS Update start");
+			pr_debug("Probe: TS Update start");
 			for (retry = 0; retry < FILE_DECODE_RETRY; retry++) {
 				ret = file_decode_process(sm, "sinofs_ts_data");
 				if (ret == ERRORTYPE_NONE)
 					break;
 				HOST_DELAY(FILE_DECODE_DELAY); /* 20211029, Ethan */
 			}
-			pr_err("Probe: TS Update end, ret=%d", ret);
+			pr_debug("Probe: TS Update end, ret=%d", ret);
 		}
 
 		if (version_ret & CHECK_VERSION_AFI) {
-			pr_err("Probe: AFI Update start");
+			pr_debug("Probe: AFI Update start");
 			for (retry = 0; retry < FILE_DECODE_RETRY; retry++) {
 				ret = file_decode_process(sm, "sinofs_afi_data");
 				if (ret == ERRORTYPE_NONE)
 					break;
 				HOST_DELAY(FILE_DECODE_DELAY); /* 20211029, Ethan */
 			}
-			pr_err("Probe: AFI Update end, ret=%d", ret);
+			pr_debug("Probe: AFI Update end, ret=%d", ret);
 		}
 	}
 
 	if (!hal_fg_init(client)) {
-		pr_err("Failed to Initialize Fuelgauge\n");
+		pr_debug("Failed to Initialize Fuelgauge\n");
 		goto err_0;
 	}
 
@@ -1986,9 +1986,9 @@ static s32 sh_fg_probe(struct i2c_client* client, const struct i2c_device_id* id
 
 #if FG_REMOVE_IRQ == 0
 	if (sm->gpio_int != -EINVAL)
-		pr_err("unuse\n");
+		pr_debug("unuse\n");
 	else {
-		pr_err("Failed to registe gpio interrupt\n");
+		pr_debug("Failed to registe gpio interrupt\n");
 		goto err_0;
 	}
 
@@ -1998,7 +1998,7 @@ static s32 sh_fg_probe(struct i2c_client* client, const struct i2c_device_id* id
 						IRQF_TRIGGER_LOW | IRQF_ONESHOT,
 						"sh fuel gauge irq", sm);
 		if (ret < 0) {
-			pr_err("request irq for irq=%d failed, ret = %d\n", client->irq, ret);
+			pr_debug("request irq for irq=%d failed, ret = %d\n", client->irq, ret);
 		}
 	}
 #endif
@@ -2006,17 +2006,17 @@ static s32 sh_fg_probe(struct i2c_client* client, const struct i2c_device_id* id
 	sm->nb.notifier_call = &sh366101_notifier_call;
 	ret = power_supply_reg_notifier(&sm->nb);
 	if (ret < 0) {
-		pr_err("Couldn't register psy notifier rc = %d\n", ret);
+		pr_debug("Couldn't register psy notifier rc = %d\n", ret);
 		return ret;
 	}
 
 	ret = sysfs_create_group(&sm->dev->kobj, &fg_attr_group);
 	if (ret)
-		pr_err("Failed to register sysfs:%d\n", ret);
+		pr_debug("Failed to register sysfs:%d\n", ret);
 
 	schedule_delayed_work(&sm->monitor_work, 10 * HZ);
-	pr_info("sh fuel gauge probe successfully, %s\n", device2str[sm->chip]);
-	//pr_err("2021.09.10 wsy %s: end\n", __func__);
+	pr_debug("sh fuel gauge probe successfully, %s\n", device2str[sm->chip]);
+	//pr_debug("2021.09.10 wsy %s: end\n", __func__);
 
 	return 0;
 
@@ -2044,7 +2044,7 @@ static s32 sh_fg_remove(struct i2c_client* client)
 
 static void sh_fg_shutdown(struct i2c_client* client)
 {
-	pr_info("sm fuel gauge driver shutdown!\n");
+	pr_debug("sm fuel gauge driver shutdown!\n");
 }
 
 static const struct of_device_id sh_fg_match_table[] = {
