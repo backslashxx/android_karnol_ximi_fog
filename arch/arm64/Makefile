@@ -263,3 +263,13 @@ define archhelp
   echo  '                  (distribution) /sbin/installkernel or'
   echo  '                  install to $$(INSTALL_PATH) and run lilo'
 endef
+
+# Tell compiler to tune the performance of the code for a specified
+# target processor
+ifeq ($(cc-name),gcc)
+KBUILD_CFLAGS += -mcpu=cortex-a73.cortex-a53+crc+crypto -mtune=cortex-a73.cortex-a53 -funswitch-loops -funroll-loops -fpeel-loops -fsplit-loops -fversion-loops-for-strides
+KBUILD_AFLAGS += -mcpu=cortex-a73.cortex-a53+crc+crypto -mtune=cortex-a73.cortex-a53 -funswitch-loops -funroll-loops -fpeel-loops -fsplit-loops -fversion-loops-for-strides
+else ifeq ($(cc-name),clang)
+KBUILD_CFLAGS += -march=armv8-a+crc+crypto -mcpu=cortex-a73+crc+crypto -mtune=cortex-a73 -funroll-loops -O3
+KBUILD_AFLAGS += -march=armv8-a+crc+crypto -mcpu=cortex-a73+crc+crypto -mtune=cortex-a73 -funroll-loops -O3
+endif

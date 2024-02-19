@@ -486,7 +486,7 @@ config STACKPROTECTOR_STRONG
 	  size by about 2%.
 
 config LTO
-	def_bool n
+	def_bool y
 
 config ARCH_SUPPORTS_LTO_CLANG
 	bool
@@ -510,20 +510,21 @@ config THINLTO
 
 choice
 	prompt "Link-Time Optimization (LTO) (EXPERIMENTAL)"
-	default LTO_NONE
+	#default LTO_NONE
 	help
 	  This option turns on Link-Time Optimization (LTO).
 
-config LTO_NONE
-	bool "None"
+#config LTO_NONE
+#	bool "None"
 
 config LTO_CLANG
 	bool "Use clang Link Time Optimization (LTO) (EXPERIMENTAL)"
-	depends on ARCH_SUPPORTS_LTO_CLANG
-	depends on !FTRACE_MCOUNT_RECORD || HAVE_C_RECORDMCOUNT
-	depends on !KASAN
-	depends on CC_IS_CLANG && LD_IS_LLD
+#	depends on ARCH_SUPPORTS_LTO_CLANG
+#	depends on !FTRACE_MCOUNT_RECORD || HAVE_C_RECORDMCOUNT
+#	depends on !KASAN
+#	depends on CC_IS_CLANG && LD_IS_LLD
 	select LTO
+	default y
 	help
           This option enables clang's Link Time Optimization (LTO), which allows
           the compiler to optimize the kernel globally at link time. If you
@@ -571,23 +572,23 @@ config ARCH_SUPPORTS_SHADOW_CALL_STACK
 	  Call Stack, has asm/scs.h, and implements runtime support for shadow
 	  stack switching.
 
-config SHADOW_CALL_STACK
-	bool "Clang Shadow Call Stack"
-	depends on ARCH_SUPPORTS_SHADOW_CALL_STACK
-	help
-	  This option enables Clang's Shadow Call Stack, which uses a
-	  shadow stack to protect function return addresses from being
-	  overwritten by an attacker. More information can be found from
-	  Clang's documentation:
-
-	    https://clang.llvm.org/docs/ShadowCallStack.html
-
-	  Note that security guarantees in the kernel differ from the ones
-	  documented for user space. The kernel must store addresses of shadow
-	  stacks used by other tasks and interrupt handlers in memory, which
-	  means an attacker capable reading and writing arbitrary memory may
-	  be able to locate them and hijack control flow by modifying shadow
-	  stacks that are not currently in use.
+#config SHADOW_CALL_STACK
+#	bool "Clang Shadow Call Stack"
+#	depends on ARCH_SUPPORTS_SHADOW_CALL_STACK
+#	help
+#	  This option enables Clang's Shadow Call Stack, which uses a
+#	  shadow stack to protect function return addresses from being
+#	  overwritten by an attacker. More information can be found from
+#	  Clang's documentation:
+#
+#	    https://clang.llvm.org/docs/ShadowCallStack.html
+#
+#	  Note that security guarantees in the kernel differ from the ones
+#	  documented for user space. The kernel must store addresses of shadow
+#	  stacks used by other tasks and interrupt handlers in memory, which
+#	  means an attacker capable reading and writing arbitrary memory may
+#	  be able to locate them and hijack control flow by modifying shadow
+#	  stacks that are not currently in use.
 
 config SHADOW_CALL_STACK_VMAP
 	bool "Use virtually mapped shadow call stacks"
@@ -998,12 +999,12 @@ config ARCH_USE_MEMREMAP_PROT
 	bool
 
 # Select if the architecture has support for applying RELR relocations.
-config ARCH_HAS_RELR
-	bool
+#config ARCH_HAS_RELR
+#	bool
 
 config RELR
 	bool "Use RELR relocation packing"
-	depends on ARCH_HAS_RELR && TOOLS_SUPPORT_RELR
+#	depends on ARCH_HAS_RELR && TOOLS_SUPPORT_RELR
 	default y
 	help
 	  Store the kernel's dynamic relocations in the RELR relocation packing
