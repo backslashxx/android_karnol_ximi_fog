@@ -128,7 +128,7 @@ obj-$(CONFIG_RSEQ) += rseq.o
 $(obj)/configs.o: $(obj)/config_data.h
 
 targets += config_data.gz
-$(obj)/config_data.gz: stock_ikconfig FORCE
+$(obj)/config_data.gz: arch/arm64/configs/fog-stock_defconfig FORCE
 
 	$(call if_changed,gzip)
 
