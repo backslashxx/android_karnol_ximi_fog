@@ -5119,7 +5119,7 @@ error:
 	return rc;
 }
 
-#ifdef CONFIG_TARGET_PROJECT_K7T
+// #ifdef CONFIG_TARGET_PROJECT_K7T
 static ssize_t sysfs_doze_status_read(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
@@ -5171,7 +5171,8 @@ static ssize_t sysfs_doze_status_write(struct device *dev,
 
 	dsi_panel_set_doze_status(panel, status);
 
-error:
+	error:
+
 	mutex_unlock(&panel->panel_lock);
 
 	return count;
@@ -5199,7 +5200,8 @@ static ssize_t sysfs_doze_mode_read(struct device *dev,
 
 	doze_mode = panel->doze_mode;
 
-error:
+	error:
+
 	mutex_unlock(&panel->panel_lock);
 
 	return snprintf(buf, PAGE_SIZE, "%d\n", doze_mode);
@@ -5246,7 +5248,7 @@ static DEVICE_ATTR(doze_status, 0644,
 static DEVICE_ATTR(doze_mode, 0644,
 			sysfs_doze_mode_read,
 			sysfs_doze_mode_write);
-#endif
+// #endif
 
 #ifdef CONFIG_TARGET_PROJECT_C3Q
 static ssize_t sysfs_cabc_read(struct device *dev,
@@ -5296,10 +5298,10 @@ static DEVICE_ATTR(cabc, 0644,
 #endif
 
 static struct attribute *display_fs_attrs[] = {
-#ifdef CONFIG_TARGET_PROJECT_K7T
+// #ifdef CONFIG_TARGET_PROJECT_K7T
 	&dev_attr_doze_status.attr,
 	&dev_attr_doze_mode.attr,
-#endif
+// #endif
         &dev_attr_hbm.attr,
 #ifdef CONFIG_TARGET_PROJECT_C3Q
 	&dev_attr_cabc.attr,
@@ -5616,14 +5618,13 @@ static int dsi_display_bind(struct device *dev,
 		goto error;
 	}
 
-#ifdef CONFIG_TARGET_PROJECT_K7T
+// #ifdef CONFIG_TARGET_PROJECT_K7T
 	rc = dsi_display_sysfs_init(display);
 	if (rc) {
 		DSI_ERR("[%s] sysfs init failed, rc=%d\n", display->name, rc);
 		goto error;
 	}
-#endif
-
+// #endif
 	atomic_set(&display->clkrate_change_pending, 0);
 	display->cached_clk_rate = 0;
 
