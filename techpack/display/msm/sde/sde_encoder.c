@@ -5027,10 +5027,10 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool is_error)
 	struct sde_encoder_phys *phys;
 	ktime_t wakeup_time;
 	unsigned int i;
-#ifdef CONFIG_TARGET_PROJECT_K7T
+// #ifdef CONFIG_TARGET_PROJECT_K7T
 	struct sde_connector *sde_conn;
 	struct dsi_display *display;
-#endif
+// #endif
 
 	if (!drm_enc) {
 		SDE_ERROR("invalid encoder\n");
@@ -5039,14 +5039,14 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool is_error)
 	SDE_ATRACE_BEGIN("encoder_kickoff");
 	sde_enc = to_sde_encoder_virt(drm_enc);
 
-#ifdef CONFIG_TARGET_PROJECT_K7T
+// #ifdef CONFIG_TARGET_PROJECT_K7T
 	sde_conn = to_sde_connector(sde_enc->cur_master->connector);
         if (!sde_conn)
 		SDE_ERROR("fps sde_encoder_kickoff sde_conn is null\n");
 	display = sde_conn->display;
         if (!display)
 		SDE_ERROR("fps sde_encoder_kickoff display is null\n");
-#endif
+// #endif
 
 	SDE_DEBUG_ENC(sde_enc, "\n");
 
@@ -5058,6 +5058,14 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool is_error)
 	if (display->panel->panel_initialized &&
 			display->panel->cur_mode->timing.refresh_rate == 60 &&
 			(display->panel->dsi_refresh_flag == 90)) {
+		dsi_set_backlight_control(display->panel, display->panel->cur_mode);
+	}
+#endif
+
+#ifdef CONFIG_TARGET_PROJECT_C3Q
+	if (display->panel->panel_initialized &&
+			display->panel->cur_mode->timing.refresh_rate == 60 &&
+			(display->panel->dsi_refresh_flag > 60)) {
 		dsi_set_backlight_control(display->panel, display->panel->cur_mode);
 	}
 #endif

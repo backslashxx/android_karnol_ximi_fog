@@ -500,10 +500,10 @@ EXPORT_SYMBOL(set_fts_ts_variant);
 static int dsi_panel_power_on(struct dsi_panel *panel)
 {
 	int rc = 0;
-#ifdef CONFIG_TARGET_PROJECT_K7T
+//#ifdef CONFIG_TARGET_PROJECT_K7T
 	int power_status = DRM_PANEL_BLANK_UNBLANK;
 	struct drm_panel_notifier notifier_data;
-#endif
+//#endif
 
 	rc = dsi_pwr_enable_regulator(&panel->power_info, true);
 	if (rc) {
@@ -526,6 +526,17 @@ static int dsi_panel_power_on(struct dsi_panel *panel)
 	DSI_INFO("[%s]: dsi panel power on\n", __func__);
 	drm_panel_notifier_call_chain(&panel->drm_panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
 #endif
+
+#ifdef CONFIG_TARGET_PROJECT_C3Q
+	u32 refresh_rate;
+	notifier_data.data = &power_status;
+	refresh_rate = panel->cur_mode->timing.refresh_rate;
+	notifier_data.refresh_rate = refresh_rate;
+	notifier_data.id = 1;
+	DSI_INFO("[%s]: dsi panel power on\n", __func__);
+	drm_panel_notifier_call_chain(&panel->drm_panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
+#endif
+
 	if (rc) {
 		DSI_ERR("[%s] failed to reset panel, rc=%d\n", panel->name, rc);
 		goto error_disable_gpio;
@@ -570,7 +581,7 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 	int rc = 0;
 
 #ifdef CONFIG_TARGET_PROJECT_C3Q
-	//usleep_range(11000, 11010);	
+	usleep_range(11000, 11010);	
 	if (get_lct_tp_gesture_status()) 
   			gesture_flag = true;
 	else gesture_flag = false;
@@ -2014,6 +2025,29 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-dispparam-cabc-still-on-command",
 	"qcom,mdss-dsi-dispparam-cabc-movice-on-command",
 	"qcom,mdss-dsi-dispparam-cabc-off-command",
+	"qcom,mdss-dsi-dispparam-bc-80hz-command",
+	"qcom,mdss-dsi-dispparam-bc-79hz-command",
+	"qcom,mdss-dsi-dispparam-bc-78hz-command",
+	"qcom,mdss-dsi-dispparam-bc-77hz-command",
+	"qcom,mdss-dsi-dispparam-bc-76hz-command",
+	"qcom,mdss-dsi-dispparam-bc-77hz-command",
+	"qcom,mdss-dsi-dispparam-bc-76hz-command",
+	"qcom,mdss-dsi-dispparam-bc-75hz-command",
+	"qcom,mdss-dsi-dispparam-bc-74hz-command",
+	"qcom,mdss-dsi-dispparam-bc-73hz-command",
+	"qcom,mdss-dsi-dispparam-bc-72hz-command",
+	"qcom,mdss-dsi-dispparam-bc-71hz-command",
+	"qcom,mdss-dsi-dispparam-bc-70hz-command",
+	"qcom,mdss-dsi-dispparam-bc-69hz-command",
+	"qcom,mdss-dsi-dispparam-bc-68hz-command",
+	"qcom,mdss-dsi-dispparam-bc-67hz-command",
+	"qcom,mdss-dsi-dispparam-bc-66hz-command",
+	"qcom,mdss-dsi-dispparam-bc-65hz-command",
+	"qcom,mdss-dsi-dispparam-bc-64hz-command",
+	"qcom,mdss-dsi-dispparam-bc-63hz-command",
+	"qcom,mdss-dsi-dispparam-bc-62hz-command",
+	"qcom,mdss-dsi-dispparam-bc-61hz-command",
+	"qcom,mdss-dsi-dispparam-bc-60hz-command",
 #endif
         "qcom,mdss-dsi-dispparam-hbm-on-command",
         "qcom,mdss-dsi-dispparam-hbm-off-command",
@@ -2056,6 +2090,27 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-dispparam-cabc-still-on-command-status",
 	"qcom,mdss-dsi-dispparam-cabc-movice-on-command-status",
 	"qcom,mdss-dsi-dispparam-cabc-off-command-status",
+	"qcom,mdss-dsi-dispparam-bc-80hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-79hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-78hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-77hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-76hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-75hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-74hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-73hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-72hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-71hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-70hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-69hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-68hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-67hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-66hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-65hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-64hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-63hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-62hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-61hz-command-state",
+	"qcom,mdss-dsi-dispparam-bc-60hz-command-state",
 #endif
         "qcom,mdss-dsi-dispparam-hbm-on-command-state",
         "qcom,mdss-dsi-dispparam-hbm-off-command-state",
@@ -4849,6 +4904,192 @@ int dsi_panel_enable(struct dsi_panel *panel)
 		}
 	}
 #endif
+
+#ifdef CONFIG_TARGET_PROJECT_C3Q
+	DSI_INFO("[%s]: dsi panel send DSI_CMD_SET_ON\n", __func__);
+	if (panel->cur_mode->timing.refresh_rate == 80) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_80HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_80HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 80;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 79) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_79HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_79HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 79;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 78) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_78HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_78HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 78;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 77) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_77HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_77HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 77;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 76) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_76HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_76HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 76;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 75) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_75HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_75HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 75;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 74) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_74HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_74HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 74;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 73) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_73HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_73HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 73;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 72) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_72HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_72HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 72;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 71) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_71HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_71HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 71;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 70) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_70HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_70HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 70;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 69) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_69HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_69HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 69;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 68) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_68HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_68HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 68;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 67) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_67HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_67HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 67;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 66) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_66HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_66HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 66;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 65) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_65HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_65HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 65;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 64) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_64HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_64HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 64;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 63) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_63HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_63HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 63;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 62) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_62HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_62HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 62;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	} else if (panel->cur_mode->timing.refresh_rate == 61) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_61HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_61HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 61;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, panel->cur_mode->timing.refresh_rate);
+		}
+	}
+#endif
+
 	mutex_unlock(&panel->panel_lock);
 	return rc;
 }
@@ -4970,10 +5211,10 @@ error:
 int dsi_panel_post_unprepare(struct dsi_panel *panel)
 {
 	int rc = 0;
-#ifdef CONFIG_TARGET_PROJECT_K7T
+// #ifdef CONFIG_TARGET_PROJECT_K7T
 	int power_status = DRM_PANEL_BLANK_POWERDOWN;
 	struct drm_panel_notifier notifier_data;
-#endif
+// #endif
 
 	if (!panel) {
 		DSI_ERR("invalid params\n");
@@ -4992,6 +5233,16 @@ int dsi_panel_post_unprepare(struct dsi_panel *panel)
 #ifdef CONFIG_TARGET_PROJECT_K7T
 	notifier_data.data = &power_status;
 	notifier_data.refresh_rate = 90;
+	notifier_data.id = 1;
+	DSI_INFO("[%s]: dsi panel power off\n", __func__);
+	drm_panel_notifier_call_chain(&panel->drm_panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
+#endif
+
+#ifdef CONFIG_TARGET_PROJECT_C3Q
+	u32 refresh_rate;
+	notifier_data.data = &power_status;
+	refresh_rate = panel->cur_mode->timing.refresh_rate;
+	notifier_data.refresh_rate = refresh_rate;
 	notifier_data.id = 1;
 	DSI_INFO("[%s]: dsi panel power off\n", __func__);
 	drm_panel_notifier_call_chain(&panel->drm_panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
@@ -5034,6 +5285,215 @@ void dsi_set_backlight_control(struct dsi_panel *panel,
 			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
 		}
 	}
+	mutex_unlock(&panel->panel_lock);
+
+	return;
+}
+#endif
+
+#ifdef CONFIG_TARGET_PROJECT_C3Q
+void dsi_set_backlight_control(struct dsi_panel *panel,
+			 struct dsi_display_mode *adj_mode)
+{
+	int rc = 0;
+
+	if (!panel || !adj_mode) {
+		pr_err("Invalid params\n");
+		return;
+	}
+	mutex_lock(&panel->panel_lock);
+
+	if (adj_mode->timing.refresh_rate == 80) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_80HZ);
+		if (rc)
+			pr_err("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_80HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 80;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 79) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_79HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_79HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 79;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 78) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_78HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_78HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 78;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 77) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_77HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_77HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 77;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 76) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_76HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_76HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 76;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 75) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_75HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_75HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 75;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 74) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_74HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_74HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 74;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 73) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_73HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_73HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 73;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 72) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_72HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_72HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 72;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 71) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_71HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_71HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 71;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 70) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_70HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_70HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 70;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 69) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_69HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_69HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 69;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 68) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_68HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_68HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 68;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 67) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_67HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_67HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 67;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 66) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_66HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_66HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 66;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 65) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_65HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_65HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 65;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 64) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_64HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_64HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 64;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 63) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_63HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_63HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 63;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 62) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_62HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_62HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 62;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 61) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_61HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_61HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 61;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	} else if (adj_mode->timing.refresh_rate == 60) {
+		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DISP_BC_60HZ);
+		if (rc)
+			DSI_ERR("[%s][%s] failed to send DSI_CMD_SET_DISP_BC_60HZ cmd, rc=%d\n",
+					__func__, panel->name, rc);
+		else {
+			panel->dsi_refresh_flag = 60;
+			DSI_INFO("%s: refresh_rate = %d\n", __func__, adj_mode->timing.refresh_rate);
+		}
+	}
+
 	mutex_unlock(&panel->panel_lock);
 
 	return;
