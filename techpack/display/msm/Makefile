@@ -2,6 +2,7 @@
 ccflags-y := -I$(srctree)/include/drm -I$(srctree)/techpack/display/msm -I$(srctree)/techpack/display/msm/dsi -I$(srctree)/techpack/display/msm/dp
 ccflags-y += -I$(srctree)/techpack/display/msm/sde
 ccflags-y += -I$(srctree)/techpack/display/rotator
+ccflags-y += -I$(srctree)/techpack/display/msm/mi_disp
 
 msm_drm-$(CONFIG_DRM_MSM_DP) += dp/dp_usbpd.o \
 	dp/dp_parser.o \
@@ -119,6 +120,9 @@ ifdef CONFIG_TARGET_PROJECT_K7T
 msm_drm-y += \
         dsi/exposure_adjustment.o
 endif
+
+msm_drm-$(CONFIG_DRM_MSM) += \
+	mi_disp/mi_dsi_display.o \
 
 obj-$(CONFIG_DRM_MSM)	+= msm_drm.o
 
