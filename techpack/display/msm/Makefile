@@ -121,8 +121,7 @@ msm_drm-y += \
         dsi/exposure_adjustment.o
 endif
 
-msm_drm-$(CONFIG_DRM_MSM) += \
-	mi_disp/mi_dsi_display.o \
+obj-y += mi_disp/mi_dsi_display.o \
 
 obj-$(CONFIG_DRM_MSM)	+= msm_drm.o
 
