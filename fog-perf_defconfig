@@ -799,13 +799,15 @@ CONFIG_AUDIT=n
 CONFIG_LCD_CLASS_DEVICE=y
 CONFIG_RMNET_PERF=y
 CONFIG_RMNET_SHS=y
+# restore /dev/diag support
+CONFIG_DIAG_CHAR=y
+CONFIG_DIAG_OVER_USB=y
 ###############################################################
 # debloat
 # all these used to be =y and they are useless irl
 CONFIG_STACKTRACE_SUPPORT=n
 CONFIG_QTI_RPM_STATS_LOG=n
 CONFIG_DEBUG_INFO=n
-CONFIG_DIAG_CHAR=n
 CONFIG_PM_DEBUG=n
 CONFIG_PM_SLEEP_DEBUG=n
 CONFIG_REGMAP_ALLOW_WRITE_DEBUGFS=n
