@@ -63,6 +63,10 @@
 #include <linux/dma-mapping.h>
 #include "focaltech_common.h"
 
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+#include "../xiaomi/xiaomi_touch.h"
+#endif
+
 #ifdef CONFIG_PM
 #include <linux/pm_runtime.h>
 #endif
@@ -219,6 +223,12 @@ struct fts_ts_data {
     struct pinctrl_state *pins_release;
 #endif
     struct notifier_block drm_notif;
+
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+    u8 palm_sensor_switch;
+    bool palm_sensor_changed;
+    bool gamemode_enabled;
+#endif
 
 	struct mutex reg_lock;
 	struct device *fts_touch_dev;
