@@ -197,26 +197,26 @@
  * ESD check & protection
  * default: disable
  */
-#define FTS_ESDCHECK_EN                         1
+#define FTS_ESDCHECK_EN                         0
 
 /*
  * Production test enable
  * 1: enable, 0:disable(default)
  */
-#define FTS_TEST_EN                             1
+#define FTS_TEST_EN                             0
 
 /*
  * Pinctrl enable
  * default: disable
  */
-#define FTS_PINCTRL_EN                          0
+#define FTS_PINCTRL_EN                          1
 
 /*
  * Customer power enable
  * enable it when customer need control TP power
  * default: disable
  */
-#define FTS_POWER_SOURCE_CUST_EN                0
+#define FTS_POWER_SOURCE_CUST_EN                1
 
 /****************************************************/
 

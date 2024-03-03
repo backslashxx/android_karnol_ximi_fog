@@ -1218,7 +1218,7 @@ int lct_fts_get_tpfwver(const char *cmd)
 }
 EXPORT_SYMBOL(lct_fts_get_tpfwver);
 
-
+#if FTS_TEST_EN
 int lct_fts_tp_selftest_callback(unsigned char cmd)
 {
 	int ret = 0;
@@ -1242,8 +1242,8 @@ int lct_fts_tp_selftest_callback(unsigned char cmd)
 	}
 	return ret;
 }
-
 EXPORT_SYMBOL(lct_fts_tp_selftest_callback);
+#endif
 
 
 #if LCT_TP_GRIP_AREA_EN
@@ -1319,7 +1319,9 @@ int lct_create_procfs(struct fts_ts_data *ts_data)
 		set_lct_tp_info_callback(lct_fts_get_tpfwver);
 		FTS_INFO("create /proc/tp_info & /proc/tp_lockdown_info succeeded");
 	}
+#if FTS_TEST_EN
   lct_tp_selftest_init(lct_fts_tp_selftest_callback);
+#endif
 
 #if LCT_TP_GRIP_AREA_EN
 	ret = init_lct_tp_grip_area(lct_fts_tp_set_screen_angle_callback, lct_fts_tp_get_screen_angle_callback);
