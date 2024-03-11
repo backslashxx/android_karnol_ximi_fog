@@ -13,7 +13,7 @@ obj-y += kernel_compat.o
 
 obj-y += selinux/
 # hardcode! this is from https://github.com/backslashxx/KernelSU/tree/11563
-$(eval KSU_VERSION=11563)
+$(eval KSU_VERSION=11600)
 $(info -- KernelSU version: $(KSU_VERSION))
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 
