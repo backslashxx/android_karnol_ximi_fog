@@ -12,8 +12,8 @@ obj-y += embed_ksud.o
 obj-y += kernel_compat.o
 
 obj-y += selinux/
-# hardcode! this is from https://github.com/backslashxx/KernelSU/tree/11563
-$(eval KSU_VERSION=11600)
+# hardcode! this is from https://github.com/backslashxx/KernelSU/tree/11628
+$(eval KSU_VERSION=11628)
 $(info -- KernelSU version: $(KSU_VERSION))
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 

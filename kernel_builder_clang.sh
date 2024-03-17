@@ -8,7 +8,7 @@ PREFIX="/tmp/tc"
 #CLANG="greenforce"
 CLANG="zyc"
 
-KSUVER="11600"
+KSUVER="11628"
 
 if [ ! -d "KernelSU" ]; then
   git clone https://github.com/backslashxx/KernelSU -b $KSUVER
