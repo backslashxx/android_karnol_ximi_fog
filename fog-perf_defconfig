@@ -700,6 +700,8 @@ CONFIG_KSU=y
 CONFIG_KPROBES=n
 CONFIG_HAVE_KPROBES=n
 CONFIG_KPROBE_EVENTS=n
+# SuSFS
+CONFIG_SUS_FS=y
 #######################################
 CONFIG_IRQ_SBALANCE=y
 # SD680/685 4+4 # what if we only force irqs on little?
