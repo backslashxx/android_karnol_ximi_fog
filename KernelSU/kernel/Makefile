@@ -1,7 +1,6 @@
 kernelsu-objs := ksu.o
 kernelsu-objs += allowlist.o
 kernelsu-objs += apk_sign.o
-kernelsu-objs += module_api.o
 kernelsu-objs += sucompat.o
 kernelsu-objs += uid_observer.o
 kernelsu-objs += manager.o
@@ -19,7 +18,7 @@ ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-
 obj-$(CONFIG_KSU) += kernelsu.o
 
 # hardcode!
-$(eval KSU_VERSION=11675)
+$(eval KSU_VERSION=11682)
 $(info -- KernelSU version: $(KSU_VERSION))
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 
